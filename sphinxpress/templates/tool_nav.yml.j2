@@ -1,0 +1,11 @@
+{{ generated_notice }}
+tool: {{ tool | yaml_quote }}
+repo_url: {{ repo_url | yaml_quote }}
+release_tag: {{ release_tag | yaml_quote }}
+release_url: {{ release_url | yaml_quote }}
+entries:
+{% for entry in entries %}
+  - slug: {{ entry.slug | yaml_quote }}
+    title: {{ entry.title | yaml_quote }}
+    url: {{ entry.url | yaml_quote }}
+{% endfor %}

@@ -70,6 +70,8 @@ instance/
 
 # Sphinx documentation
 docs/_build/
+.sphinxpress/
+example_site/
 
 # PyBuilder
 .pybuilder/
@@ -216,3 +218,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+sphinxpress/_version.py

@@ -1,0 +1,126 @@
+"""Create aggregate Sphinx projects for EPUB and PDF output."""
+
+from __future__ import annotations
+
+import runpy
+import shutil
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+from .errors import ValidationError
+from .models import AggregateProject, AppConfig, BookFormat, ProjectConfig
+from .paths import copy_tree, ensure_within_root, reset_directory, write_text_if_changed
+from .sphinx_runner import run_sphinx
+
+
+def build_book(
+    config: AppConfig,
+    projects: list[ProjectConfig],
+    *,
+    format_name: BookFormat,
+) -> Path:
+    aggregate = create_aggregate_project(config, projects)
+    if format_name == "epub":
+        out_dir = aggregate.build_dir / "epub"
+        run_sphinx(
+            builder=config.epub.builder,
+            conf_dir=aggregate.source_dir,
+            src_dir=aggregate.source_dir,
+            out_dir=out_dir,
+            doctree_dir=aggregate.doctree_dir,
+            fail_on_warning=config.build.fail_on_warning,
+            sphinx_build=config.build.sphinx_build,
+            parallel=config.build.parallel,
+        )
+        return _copy_artifact(out_dir, "*.epub", config.epub.output)
+
+    run_sphinx(
+        builder=config.pdf.builder,
+        conf_dir=aggregate.source_dir,
+        src_dir=aggregate.source_dir,
+        out_dir=aggregate.build_dir,
+        doctree_dir=aggregate.doctree_dir,
+        fail_on_warning=config.build.fail_on_warning,
+        sphinx_build=config.build.sphinx_build,
+        parallel=config.build.parallel,
+    )
+    return _copy_artifact(aggregate.build_dir, "*.pdf", config.pdf.output)
+
+
+def create_aggregate_project(
+    config: AppConfig,
+    projects: list[ProjectConfig],
+) -> AggregateProject:
+    root = config.build.work_dir / "build" / "book"
+    if not config.build.keep_build_dir:
+        reset_directory(root)
+    else:
+        root.mkdir(parents=True, exist_ok=True)
+    source_dir = root / "source"
+    build_dir = root / "build"
+    doctree_dir = build_dir / "doctrees"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    build_dir.mkdir(parents=True, exist_ok=True)
+
+    project_docnames: list[str] = []
+    extensions = _collect_extensions(projects)
+    projects_root = source_dir / "projects"
+
+    for project in projects:
+        destination = ensure_within_root(source_dir, projects_root / project.name)
+        copy_tree(project.docs_root, destination)
+        project_docnames.append(f"projects/{project.name}/{project.root_doc}")
+
+    env = _template_environment()
+    conf_content = env.get_template("aggregate_conf.py.j2").render(
+        title=config.book.title,
+        author=config.book.author,
+        language=config.book.language,
+        extensions=extensions,
+    )
+    index_content = env.get_template("aggregate_index.rst.j2").render(
+        title=config.book.title,
+        underline="=" * len(config.book.title),
+        docnames=project_docnames,
+    )
+    write_text_if_changed(source_dir / "conf.py", conf_content)
+    write_text_if_changed(source_dir / "index.rst", index_content)
+    return AggregateProject(
+        root=root,
+        source_dir=source_dir,
+        build_dir=build_dir,
+        doctree_dir=doctree_dir,
+    )
+
+
+def _collect_extensions(projects: list[ProjectConfig]) -> list[str]:
+    extensions: set[str] = set()
+    for project in projects:
+        namespace = runpy.run_path(str(project.conf_py))
+        raw_extensions = namespace.get("extensions", [])
+        if isinstance(raw_extensions, list):
+            extensions.update(item for item in raw_extensions if isinstance(item, str))
+    return sorted(extensions)
+
+
+def _copy_artifact(search_root: Path, pattern: str, destination: Path) -> Path:
+    artifacts = sorted(search_root.rglob(pattern))
+    if not artifacts:
+        raise ValidationError(
+            f"Expected build artifact matching {pattern} under {search_root}, but none was produced."
+        )
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(artifacts[0], destination)
+    return destination
+
+
+def _template_environment() -> Environment:
+    template_dir = Path(__file__).with_name("templates")
+    return Environment(
+        loader=FileSystemLoader(str(template_dir)),
+        autoescape=False,
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+

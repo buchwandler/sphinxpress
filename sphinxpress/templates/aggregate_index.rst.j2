@@ -1,0 +1,10 @@
+{{ title }}
+{{ "=" * title|length }}
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Projects
+
+{% for docname in docnames -%}
+   {{ docname }}
+{% endfor %}

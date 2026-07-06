@@ -1,0 +1,56 @@
+# Development sample configuration for the fixture Sphinx projects in this
+# repository. Replace these paths with your real documentation projects in
+# normal usage.
+
+[site]
+root = "example_site"
+base_url = "https://docs.example.com"
+tools_dir = "tools"
+nav_data_dir = "_data/tool_nav"
+layout = "tool-doc"
+title = "Fixture Tool Docs"
+
+[build]
+work_dir = ".sphinxpress"
+sphinx_build = "sphinx-build"
+fail_on_warning = true
+keep_build_dir = false
+parallel = "1"
+
+[book]
+title = "Fixture Documentation"
+author = "sphinxpress"
+language = "en"
+project_order = ["booktx", "epub2text"]
+
+[pdf]
+builder = "latexpdf"
+output = "dist/fixture-documentation.pdf"
+
+[epub]
+builder = "epub"
+output = "dist/fixture-documentation.epub"
+
+[release]
+tag_prefix = "v"
+release_url_template = "{repo_url}/releases/tag/{tag}"
+
+[[projects]]
+name = "booktx"
+title = "booktx"
+docs_root = "tests/fixtures/minimal_sphinx_project/docs"
+conf_dir = "tests/fixtures/minimal_sphinx_project/docs"
+root_doc = "index"
+repo_url = "https://github.com/example/booktx"
+release_strategy = "manual"
+release_tag = "v0.4.0"
+
+[[projects]]
+name = "epub2text"
+title = "epub2text"
+docs_root = "tests/fixtures/second_sphinx_project/docs"
+conf_dir = "tests/fixtures/second_sphinx_project/docs"
+root_doc = "index"
+repo_url = "https://github.com/example/epub2text"
+release_strategy = "manual"
+release_tag = "v0.5.0"
