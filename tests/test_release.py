@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import subprocess
 
+from conftest import copy_fixture, write_config
+
 from sphinxpress.config import load_config
 from sphinxpress.release import build_release_url, resolve_release_tag
-
-from conftest import copy_fixture, write_config
 
 
 def test_release_manual(tmp_path, minimal_project_root):
@@ -27,11 +27,30 @@ def test_release_manual(tmp_path, minimal_project_root):
 def test_release_git_tag(tmp_path):
     project_root = copy_fixture(tmp_path)
     subprocess.run(["git", "init"], cwd=project_root, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.name", "Test"], cwd=project_root, check=True, capture_output=True)
-    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=project_root, check=True, capture_output=True)
-    subprocess.run(["git", "add", "."], cwd=project_root, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "init"], cwd=project_root, check=True, capture_output=True)
-    subprocess.run(["git", "tag", "v0.4.1"], cwd=project_root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.name", "Test"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "add", "."], cwd=project_root, check=True, capture_output=True
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "init"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "tag", "v0.4.1"], cwd=project_root, check=True, capture_output=True
+    )
     config_path = write_config(
         tmp_path,
         projects=[
@@ -50,7 +69,7 @@ def test_release_git_tag(tmp_path):
 def test_release_pyproject_version(tmp_path):
     project_root = copy_fixture(tmp_path)
     (project_root / "pyproject.toml").write_text(
-        "[project]\nname = \"fixture\"\nversion = \"0.7.0\"\n",
+        '[project]\nname = "fixture"\nversion = "0.7.0"\n',
         encoding="utf-8",
     )
     config_path = write_config(
@@ -77,7 +96,7 @@ def test_release_url_template(tmp_path, minimal_project_root):
                 "docs_root": str(minimal_project_root / "docs"),
                 "release_tag": "v0.4.0",
             }
-        ]
+        ],
     )
     config_path.write_text(
         config_path.read_text(encoding="utf-8").replace(

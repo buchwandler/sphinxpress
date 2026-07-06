@@ -22,13 +22,17 @@ def write_jekyll_page(
     body_html: str,
 ) -> Path:
     destination = ensure_within_root(site.root, site.root / relative_path)
-    content = _template_environment().get_template("jekyll_page.md.j2").render(
-        layout=site.layout,
-        title=title,
-        permalink=permalink,
-        nav_tool=nav_tool,
-        generated_notice=generated_notice(),
-        body_html=body_html.strip(),
+    content = (
+        _template_environment()
+        .get_template("jekyll_page.md.j2")
+        .render(
+            layout=site.layout,
+            title=title,
+            permalink=permalink,
+            nav_tool=nav_tool,
+            generated_notice=generated_notice(),
+            body_html=body_html.strip(),
+        )
     )
     write_text_if_changed(destination, content)
     return destination
@@ -45,13 +49,17 @@ def write_tool_nav(
         site.root,
         site.root / site.nav_data_dir / f"{project.name}.yml",
     )
-    content = _template_environment().get_template("tool_nav.yml.j2").render(
-        generated_notice=generated_notice("#", ""),
-        tool=project.name,
-        repo_url=project.repo_url,
-        release_tag=release.tag,
-        release_url=release.url,
-        entries=entries,
+    content = (
+        _template_environment()
+        .get_template("tool_nav.yml.j2")
+        .render(
+            generated_notice=generated_notice("#", ""),
+            tool=project.name,
+            repo_url=project.repo_url,
+            release_tag=release.tag,
+            release_url=release.url,
+            entries=entries,
+        )
     )
     write_text_if_changed(destination, content)
     return destination

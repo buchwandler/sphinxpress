@@ -4,13 +4,12 @@ import json
 from pathlib import Path
 
 import pytest
+from conftest import write_config
 
 from sphinxpress.config import load_config
 from sphinxpress.errors import PathTraversalError
 from sphinxpress.jekyll_writer import parse_nav_yaml
 from sphinxpress.site_builder import _render_project_json, build_site
-
-from conftest import write_config
 
 
 def test_site_builder_writes_jekyll_pages(monkeypatch, tmp_path, minimal_project_root):
@@ -110,7 +109,9 @@ def test_site_builder_is_idempotent(monkeypatch, tmp_path, minimal_project_root)
     assert first == second
 
 
-def test_site_builder_uses_project_release_tag(monkeypatch, tmp_path, minimal_project_root):
+def test_site_builder_uses_project_release_tag(
+    monkeypatch, tmp_path, minimal_project_root
+):
     config_path = write_config(
         tmp_path,
         projects=[
@@ -139,7 +140,9 @@ def test_site_builder_uses_project_release_tag(monkeypatch, tmp_path, minimal_pr
     assert payload["release_tag"] == "v1.2.3"
 
 
-def test_site_builder_rejects_path_traversal(monkeypatch, tmp_path, minimal_project_root):
+def test_site_builder_rejects_path_traversal(
+    monkeypatch, tmp_path, minimal_project_root
+):
     config_path = write_config(
         tmp_path,
         projects=[

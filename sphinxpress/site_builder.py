@@ -58,7 +58,12 @@ def build_site(config: AppConfig, projects: list[ProjectConfig]) -> list[Path]:
             entries=entries,
         )
         outputs.append(nav_path)
-        tool_links.append((project.title, permalink_for(config.site.tools_dir, project.name, project.root_doc)))
+        tool_links.append(
+            (
+                project.title,
+                permalink_for(config.site.tools_dir, project.name, project.root_doc),
+            )
+        )
 
     tools_index = write_tools_index(
         site=config.site,
@@ -92,14 +97,16 @@ def _render_project_json(
         if not isinstance(body_html, str):
             continue
         docname = json_path.relative_to(out_dir).with_suffix("").as_posix()
-        relative_page_path = config.site.tools_dir / project.name / docname_to_output_path(docname)
+        relative_page_path = (
+            config.site.tools_dir / project.name / docname_to_output_path(docname)
+        )
         page = PageRender(
             docname=docname,
             title=_page_title(project, docname, data.get("title")),
             body_html=body_html,
-            output_path=ensure_within_root(config.site.root, config.site.root / relative_page_path).relative_to(
-                config.site.root
-            ),
+            output_path=ensure_within_root(
+                config.site.root, config.site.root / relative_page_path
+            ).relative_to(config.site.root),
             permalink=permalink_for(config.site.tools_dir, project.name, docname),
         )
         pages.append(page)
@@ -107,7 +114,9 @@ def _render_project_json(
 
 
 def _page_title(project: ProjectConfig, docname: str, raw_title: object) -> str:
-    title = raw_title if isinstance(raw_title, str) and raw_title.strip() else project.title
+    title = (
+        raw_title if isinstance(raw_title, str) and raw_title.strip() else project.title
+    )
     if docname == project.root_doc and title == project.title:
         return title
     if docname == project.root_doc:
@@ -115,4 +124,3 @@ def _page_title(project: ProjectConfig, docname: str, raw_title: object) -> str:
     if title.lower().startswith(project.title.lower()):
         return title
     return f"{project.title} {title}"
-

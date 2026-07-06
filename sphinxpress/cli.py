@@ -2,20 +2,30 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import typer
 
 from .book_builder import build_book
-from .config import append_project, load_config, select_projects, update_project_release_tag
+from .config import (
+    append_project,
+    load_config,
+    select_projects,
+    update_project_release_tag,
+)
 from .errors import SphinxpressError
 from .release import resolve_release_metadata, resolve_release_tag
 from .site_builder import build_site
 from .validate import run_check, run_validation
 
-app = typer.Typer(no_args_is_help=True, add_completion=False, help="Publish multiple Sphinx projects as one documentation product.")
+app = typer.Typer(
+    no_args_is_help=True,
+    add_completion=False,
+    help="Publish multiple Sphinx projects as one documentation product.",
+)
 
 
 def _command(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -30,11 +40,14 @@ def _command(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
+_DEFAULT_CONFIG_PATH: Path = Path("sphinxpress.toml")
+
+
 @app.callback()
 def main(
     ctx: typer.Context,
-    config: Path = typer.Option(
-        Path("sphinxpress.toml"),
+    config: Path = typer.Option(  # noqa: B008
+        _DEFAULT_CONFIG_PATH,
         "--config",
         file_okay=True,
         dir_okay=False,
@@ -70,12 +83,18 @@ def list_command(ctx: typer.Context) -> None:
 @_command
 def build_site_command(
     ctx: typer.Context,
-    all_projects: bool = typer.Option(False, "--all", help="Build all configured projects."),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Build all configured projects."
+    ),
     project: str | None = typer.Option(None, "--project", help="Build one project."),
-    projects: str | None = typer.Option(None, "--projects", help="Comma-separated project list."),
+    projects: str | None = typer.Option(
+        None, "--projects", help="Comma-separated project list."
+    ),
 ) -> None:
     config = _load_from_context(ctx)
-    selected = select_projects(config, all_projects=all_projects, project=project, projects=projects)
+    selected = select_projects(
+        config, all_projects=all_projects, project=project, projects=projects
+    )
     build_site(config, selected)
     typer.echo("Site build completed.")
 
@@ -84,12 +103,18 @@ def build_site_command(
 @_command
 def build_pdf_command(
     ctx: typer.Context,
-    all_projects: bool = typer.Option(False, "--all", help="Build all configured projects."),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Build all configured projects."
+    ),
     project: str | None = typer.Option(None, "--project", help="Build one project."),
-    projects: str | None = typer.Option(None, "--projects", help="Comma-separated project list."),
+    projects: str | None = typer.Option(
+        None, "--projects", help="Comma-separated project list."
+    ),
 ) -> None:
     config = _load_from_context(ctx)
-    selected = select_projects(config, all_projects=all_projects, project=project, projects=projects)
+    selected = select_projects(
+        config, all_projects=all_projects, project=project, projects=projects
+    )
     output = build_book(config, selected, format_name="pdf")
     typer.echo(str(output))
 
@@ -98,12 +123,18 @@ def build_pdf_command(
 @_command
 def build_epub_command(
     ctx: typer.Context,
-    all_projects: bool = typer.Option(False, "--all", help="Build all configured projects."),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Build all configured projects."
+    ),
     project: str | None = typer.Option(None, "--project", help="Build one project."),
-    projects: str | None = typer.Option(None, "--projects", help="Comma-separated project list."),
+    projects: str | None = typer.Option(
+        None, "--projects", help="Comma-separated project list."
+    ),
 ) -> None:
     config = _load_from_context(ctx)
-    selected = select_projects(config, all_projects=all_projects, project=project, projects=projects)
+    selected = select_projects(
+        config, all_projects=all_projects, project=project, projects=projects
+    )
     output = build_book(config, selected, format_name="epub")
     typer.echo(str(output))
 
@@ -113,14 +144,20 @@ def build_epub_command(
 def build_book_command(
     ctx: typer.Context,
     format_name: str = typer.Option(..., "--format", help="Book format: pdf or epub."),
-    all_projects: bool = typer.Option(False, "--all", help="Build all configured projects."),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Build all configured projects."
+    ),
     project: str | None = typer.Option(None, "--project", help="Build one project."),
-    projects: str | None = typer.Option(None, "--projects", help="Comma-separated project list."),
+    projects: str | None = typer.Option(
+        None, "--projects", help="Comma-separated project list."
+    ),
 ) -> None:
     if format_name not in {"pdf", "epub"}:
         raise typer.BadParameter("Format must be 'pdf' or 'epub'.")
     config = _load_from_context(ctx)
-    selected = select_projects(config, all_projects=all_projects, project=project, projects=projects)
+    selected = select_projects(
+        config, all_projects=all_projects, project=project, projects=projects
+    )
     output = build_book(config, selected, format_name=format_name)
     typer.echo(str(output))
 
@@ -143,7 +180,9 @@ def update_release_command(
 @_command
 def update_releases_command(
     ctx: typer.Context,
-    all_projects: bool = typer.Option(False, "--all", help="Update all configured projects."),
+    all_projects: bool = typer.Option(
+        False, "--all", help="Update all configured projects."
+    ),
 ) -> None:
     if not all_projects:
         raise typer.BadParameter("Pass --all to update every configured project.")
@@ -162,9 +201,15 @@ def add_project_command(
     docs: str = typer.Option(..., "--docs", help="Path to the project's docs root."),
     repo: str = typer.Option(..., "--repo", help="Project repository URL."),
     title: str | None = typer.Option(None, "--title", help="Display title."),
-    conf_dir: str | None = typer.Option(None, "--conf-dir", help="Path containing conf.py."),
-    root_doc: str = typer.Option("index", "--root-doc", help="Configured Sphinx root_doc."),
-    release_strategy: str = typer.Option("git_tag", "--release-strategy", help="manual, git_tag, or pyproject."),
+    conf_dir: str | None = typer.Option(
+        None, "--conf-dir", help="Path containing conf.py."
+    ),
+    root_doc: str = typer.Option(
+        "index", "--root-doc", help="Configured Sphinx root_doc."
+    ),
+    release_strategy: str = typer.Option(
+        "git_tag", "--release-strategy", help="manual, git_tag, or pyproject."
+    ),
 ) -> None:
     config_path = ctx.obj["config_path"]
     append_project(
@@ -184,9 +229,12 @@ def add_project_command(
 @_command
 def validate_command(
     ctx: typer.Context,
-    linkcheck: bool = typer.Option(False, "--linkcheck/--no-linkcheck", help="Run Sphinx linkcheck in addition to dummy builds."),
+    linkcheck: bool = typer.Option(
+        False,
+        "--linkcheck/--no-linkcheck",
+        help="Run Sphinx linkcheck in addition to dummy builds.",
+    ),
 ) -> None:
     config = _load_from_context(ctx)
     run_validation(config, config.ordered_projects(), include_linkcheck=linkcheck)
     typer.echo("Validation passed.")
-

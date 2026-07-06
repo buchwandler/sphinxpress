@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import tomllib
 from pathlib import Path
 from typing import Any
 
 import tomli_w
+import tomllib
 
 from .errors import ConfigError, SelectionError
 from .models import (
@@ -50,26 +50,37 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         title=_string(site_data, "title"),
     )
     build = BuildConfig(
-        work_dir=resolve_path(base_dir, _string(build_data, "work_dir", default=".sphinxpress")),
+        work_dir=resolve_path(
+            base_dir, _string(build_data, "work_dir", default=".sphinxpress")
+        ),
         sphinx_build=_string(build_data, "sphinx_build", default="sphinx-build"),
         fail_on_warning=_bool(build_data, "fail_on_warning", default=True),
         keep_build_dir=_bool(build_data, "keep_build_dir", default=False),
         parallel=_string(build_data, "parallel", default="auto"),
     )
-    project_names = [item.get("name") for item in projects_data if isinstance(item, dict)]
+    project_names = [
+        item.get("name") for item in projects_data if isinstance(item, dict)
+    ]
     book = BookConfig(
         title=_string(book_data, "title", default=site.title),
         author=_string(book_data, "author", default=""),
         language=_string(book_data, "language", default="en"),
-        project_order=_string_list(book_data.get("project_order"), default=[name for name in project_names if isinstance(name, str)]),
+        project_order=_string_list(
+            book_data.get("project_order"),
+            default=[name for name in project_names if isinstance(name, str)],
+        ),
     )
     pdf = OutputConfig(
         builder=_string(pdf_data, "builder", default="latexpdf"),
-        output=resolve_path(base_dir, _string(pdf_data, "output", default="dist/documentation.pdf")),
+        output=resolve_path(
+            base_dir, _string(pdf_data, "output", default="dist/documentation.pdf")
+        ),
     )
     epub = OutputConfig(
         builder=_string(epub_data, "builder", default="epub"),
-        output=resolve_path(base_dir, _string(epub_data, "output", default="dist/documentation.epub")),
+        output=resolve_path(
+            base_dir, _string(epub_data, "output", default="dist/documentation.epub")
+        ),
     )
     release = ReleaseConfig(
         tag_prefix=_string(release_data, "tag_prefix", default="v"),
@@ -100,7 +111,11 @@ def select_projects(
     project: str | None,
     projects: str | None,
 ) -> list[ProjectConfig]:
-    selected_flags = sum(1 for value in (all_projects, project is not None, projects is not None) if value)
+    selected_flags = sum(
+        1
+        for value in (all_projects, project is not None, projects is not None)
+        if value
+    )
     if selected_flags != 1:
         raise SelectionError("Choose exactly one of --all, --project, or --projects.")
     if all_projects:
@@ -168,7 +183,9 @@ def _load_raw(config_path: Path) -> dict[str, Any]:
     with config_path.open("rb") as handle:
         raw = tomllib.load(handle)
     if not isinstance(raw, dict):
-        raise ConfigError(f"Configuration file '{config_path}' did not contain a TOML table.")
+        raise ConfigError(
+            f"Configuration file '{config_path}' did not contain a TOML table."
+        )
     return raw
 
 
@@ -184,7 +201,9 @@ def _project_from_raw(base_dir: Path, raw: Any) -> ProjectConfig:
         name=name,
         title=_string(raw, "title", default=name),
         docs_root=resolve_path(base_dir, _string(raw, "docs_root")),
-        conf_dir=resolve_path(base_dir, _string(raw, "conf_dir", default=_string(raw, "docs_root"))),
+        conf_dir=resolve_path(
+            base_dir, _string(raw, "conf_dir", default=_string(raw, "docs_root"))
+        ),
         root_doc=_string(raw, "root_doc", default="index"),
         repo_url=_string(raw, "repo_url"),
         release_strategy=_string(raw, "release_strategy", default="manual"),
@@ -237,4 +256,3 @@ def _string_list(value: Any, *, default: list[str]) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ConfigError("Configuration list values must contain only strings.")
     return list(value)
-

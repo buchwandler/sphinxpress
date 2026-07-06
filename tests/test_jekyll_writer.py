@@ -53,11 +53,12 @@ def test_jekyll_writer_writes_nav_yaml(tmp_path):
     nav_path = write_tool_nav(
         site=site,
         project=project,
-        release=ReleaseMetadata(tag="v0.4.0", url="https://example.com/booktx/releases/tag/v0.4.0"),
+        release=ReleaseMetadata(
+            tag="v0.4.0", url="https://example.com/booktx/releases/tag/v0.4.0"
+        ),
         entries=[NavEntry(slug="index", title="booktx", url="/tools/booktx/")],
     )
 
     payload = parse_nav_yaml(nav_path)
     assert payload["release_tag"] == "v0.4.0"
     assert payload["entries"][0]["url"] == "/tools/booktx/"
-

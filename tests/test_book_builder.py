@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
+from conftest import copy_fixture, write_config
 
 from sphinxpress.book_builder import build_book, create_aggregate_project
 from sphinxpress.config import load_config
-
-from conftest import copy_fixture, write_config
 
 
 def test_book_builder_creates_aggregate_project(tmp_path, minimal_project_root):
@@ -91,7 +89,9 @@ def test_book_builder_copies_project_docs_under_unique_prefixes(tmp_path):
     assert (aggregate.source_dir / "projects" / "epub2text" / "index.rst").exists()
 
 
-def test_book_builder_builds_epub_for_minimal_project(monkeypatch, tmp_path, minimal_project_root):
+def test_book_builder_builds_epub_for_minimal_project(
+    monkeypatch, tmp_path, minimal_project_root
+):
     config_path = write_config(
         tmp_path,
         projects=[
@@ -117,7 +117,9 @@ def test_book_builder_builds_epub_for_minimal_project(monkeypatch, tmp_path, min
     assert output.exists()
 
 
-def test_book_builder_builds_pdf_command_for_minimal_project(monkeypatch, tmp_path, minimal_project_root):
+def test_book_builder_builds_pdf_command_for_minimal_project(
+    monkeypatch, tmp_path, minimal_project_root
+):
     config_path = write_config(
         tmp_path,
         projects=[

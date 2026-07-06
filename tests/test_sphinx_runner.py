@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
-
 from sphinxpress.sphinx_runner import build_sphinx_command, run_sphinx
 
 
@@ -48,4 +46,3 @@ def test_sphinx_runner_latexpdf_uses_dash_M_not_dash_b():
 
     assert command[1:3] == ["-M", "latexpdf"]
     assert "-b" not in command
-

@@ -108,7 +108,8 @@ def _copy_artifact(search_root: Path, pattern: str, destination: Path) -> Path:
     artifacts = sorted(search_root.rglob(pattern))
     if not artifacts:
         raise ValidationError(
-            f"Expected build artifact matching {pattern} under {search_root}, but none was produced."
+            f"Expected build artifact matching {pattern} under "
+            f"{search_root}, but none was produced."
         )
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(artifacts[0], destination)
@@ -123,4 +124,3 @@ def _template_environment() -> Environment:
         trim_blocks=True,
         lstrip_blocks=True,
     )
-

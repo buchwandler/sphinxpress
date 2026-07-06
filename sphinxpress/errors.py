@@ -29,4 +29,3 @@ class PathTraversalError(SphinxpressError):
 
 class ReleaseResolutionError(SphinxpressError):
     """Raised when release metadata cannot be resolved."""
-

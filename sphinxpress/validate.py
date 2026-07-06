@@ -37,7 +37,9 @@ def _check_sphinx_available(config: AppConfig) -> None:
             raise ValidationError(f"Sphinx build command '{command}' does not exist.")
         return
     if shutil.which(command) is None:
-        raise ValidationError(f"Sphinx build command '{command}' is not available on PATH.")
+        raise ValidationError(
+            f"Sphinx build command '{command}' is not available on PATH."
+        )
 
 
 def _run_builder_checks(
@@ -52,8 +54,15 @@ def _run_builder_checks(
                 builder=builder,
                 conf_dir=project.conf_dir,
                 src_dir=project.docs_root,
-                out_dir=config.build.work_dir / "validate-build" / builder / project.name,
-                doctree_dir=config.build.work_dir / "validate-build" / "doctrees" / project.name / builder,
+                out_dir=config.build.work_dir
+                / "validate-build"
+                / builder
+                / project.name,
+                doctree_dir=config.build.work_dir
+                / "validate-build"
+                / "doctrees"
+                / project.name
+                / builder,
                 fail_on_warning=config.build.fail_on_warning,
                 sphinx_build=config.build.sphinx_build,
                 parallel=config.build.parallel,
@@ -69,7 +78,9 @@ def _validate_generated_site(config: AppConfig, projects: list[ProjectConfig]) -
 
     for path in validation_root.rglob("*.md"):
         if not path.read_text(encoding="utf-8").startswith("---\n"):
-            raise ValidationError(f"Generated Jekyll page '{path}' is missing front matter.")
+            raise ValidationError(
+                f"Generated Jekyll page '{path}' is missing front matter."
+            )
 
     nav_root = validation_root / config.site.nav_data_dir
     for nav_path in sorted(nav_root.glob("*.yml")):
@@ -82,14 +93,16 @@ def _validate_generated_site(config: AppConfig, projects: list[ProjectConfig]) -
                 page_path = validation_root / relative.with_suffix(".md")
             if not page_path.exists():
                 raise ValidationError(
-                    f"Navigation entry '{entry['url']}' in {nav_path.name} does not reference a generated page."
+                    f"Navigation entry '{entry['url']}' in "
+                    f"{nav_path.name} does not reference a generated page."
                 )
 
 
-def _validate_aggregate_project(config: AppConfig, projects: list[ProjectConfig]) -> None:
+def _validate_aggregate_project(
+    config: AppConfig, projects: list[ProjectConfig]
+) -> None:
     aggregate = create_aggregate_project(config, projects)
     conf_py = aggregate.source_dir / "conf.py"
     index_rst = aggregate.source_dir / "index.rst"
     if not conf_py.exists() or not index_rst.exists():
         raise ValidationError("Aggregate book project was not created correctly.")
-

@@ -5,4 +5,3 @@ Second Example
    :maxdepth: 2
 
    usage
-

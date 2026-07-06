@@ -22,7 +22,18 @@ def build_sphinx_command(
 ) -> list[str]:
     args = [sphinx_build]
     if builder == "latexpdf":
-        args.extend(["-M", "latexpdf", str(src_dir), str(out_dir), "-c", str(conf_dir), "-d", str(doctree_dir)])
+        args.extend(
+            [
+                "-M",
+                "latexpdf",
+                str(src_dir),
+                str(out_dir),
+                "-c",
+                str(conf_dir),
+                "-d",
+                str(doctree_dir),
+            ]
+        )
     else:
         args.extend(["-b", builder, "-c", str(conf_dir), "-d", str(doctree_dir)])
         if fail_on_warning:
@@ -77,4 +88,3 @@ def run_sphinx(
             f"Sphinx builder '{builder}' failed with exit code {result.returncode}.\n"
             f"Command: {' '.join(command)}\n{detail}".rstrip()
         )
-

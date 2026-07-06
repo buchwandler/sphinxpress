@@ -3,12 +3,11 @@ from __future__ import annotations
 import textwrap
 
 import pytest
+from conftest import write_config
 
 from sphinxpress.config import load_config
 from sphinxpress.errors import ConfigError, ValidationError
 from sphinxpress.validate import run_check, run_validation
-
-from conftest import write_config
 
 
 def test_validate_detects_broken_nav_entry(monkeypatch, tmp_path, minimal_project_root):
@@ -24,8 +23,13 @@ def test_validate_detects_broken_nav_entry(monkeypatch, tmp_path, minimal_projec
     )
     config = load_config(config_path)
 
-    monkeypatch.setattr("sphinxpress.validate._check_sphinx_available", lambda config: None)
-    monkeypatch.setattr("sphinxpress.validate._run_builder_checks", lambda config, projects, include_linkcheck: None)
+    monkeypatch.setattr(
+        "sphinxpress.validate._check_sphinx_available", lambda config: None
+    )
+    monkeypatch.setattr(
+        "sphinxpress.validate._run_builder_checks",
+        lambda config, projects, include_linkcheck: None,
+    )
 
     def fake_build_site(site_config, projects):
         nav_root = site_config.site.root / site_config.site.nav_data_dir
@@ -57,7 +61,9 @@ def test_validate_detects_broken_nav_entry(monkeypatch, tmp_path, minimal_projec
 def test_validate_detects_missing_root_doc(tmp_path):
     docs_root = tmp_path / "docs"
     docs_root.mkdir()
-    (docs_root / "conf.py").write_text("project = 'Example'\nroot_doc = 'index'\n", encoding="utf-8")
+    (docs_root / "conf.py").write_text(
+        "project = 'Example'\nroot_doc = 'index'\n", encoding="utf-8"
+    )
     config_path = write_config(
         tmp_path,
         projects=[
@@ -77,7 +83,9 @@ def test_validate_runs_dummy_builder(monkeypatch, minimal_config_path):
     config = load_config(minimal_config_path)
     seen = []
 
-    monkeypatch.setattr("sphinxpress.validate._check_sphinx_available", lambda config: None)
+    monkeypatch.setattr(
+        "sphinxpress.validate._check_sphinx_available", lambda config: None
+    )
 
     def fake_run_sphinx(**kwargs):
         seen.append(kwargs["builder"])

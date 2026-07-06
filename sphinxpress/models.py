@@ -104,17 +104,24 @@ class AppConfig:
         return project
 
     def ordered_projects(self, names: list[str] | None = None) -> list[ProjectConfig]:
-        selected = self.projects if names is None else [self.require_project(name) for name in names]
+        selected = (
+            self.projects
+            if names is None
+            else [self.require_project(name) for name in names]
+        )
         if names is not None:
             return selected
 
         order = {name: index for index, name in enumerate(self.book.project_order)}
-        return sorted(selected, key=lambda project: (order.get(project.name, len(order)), project.name))
+        return sorted(
+            selected,
+            key=lambda project: (order.get(project.name, len(order)), project.name),
+        )
 
-    def with_site_root(self, root: Path) -> "AppConfig":
+    def with_site_root(self, root: Path) -> AppConfig:
         return replace(self, site=replace(self.site, root=root))
 
-    def with_work_dir(self, work_dir: Path) -> "AppConfig":
+    def with_work_dir(self, work_dir: Path) -> AppConfig:
         return replace(self, build=replace(self.build, work_dir=work_dir))
 
 
@@ -146,4 +153,3 @@ class AggregateProject:
     source_dir: Path
     build_dir: Path
     doctree_dir: Path
-

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-
 FIXTURES = Path(__file__).parent / "fixtures"
 
 
@@ -29,6 +28,7 @@ def write_config(
         release_tag_line = ""
         if project.get("release_tag"):
             release_tag_line = f'release_tag = "{project["release_tag"]}"\n'
+        repo_url_default = "https://example.com/" + project["name"]
         project_blocks.append(
             textwrap.dedent(
                 f"""
@@ -38,13 +38,14 @@ def write_config(
                 docs_root = "{project["docs_root"]}"
                 conf_dir = "{project.get("conf_dir", project["docs_root"])}"
                 root_doc = "{project.get("root_doc", "index")}"
-                repo_url = "{project.get("repo_url", "https://example.com/" + project["name"])}"
+                repo_url = "{project.get("repo_url", repo_url_default)}"
                 release_strategy = "{project.get("release_strategy", "manual")}"
                 {release_tag_line}
                 """
             ).strip()
         )
 
+    joined_blocks = "\n\n".join(project_blocks)
     config_content = textwrap.dedent(
         f"""
         [site]
@@ -80,7 +81,7 @@ def write_config(
         tag_prefix = "v"
         release_url_template = "{{repo_url}}/releases/tag/{{tag}}"
 
-        {"\n\n".join(project_blocks)}
+        {joined_blocks}
         """
     ).strip()
     if extra:
@@ -108,4 +109,3 @@ def minimal_config_path(tmp_path: Path, minimal_project_root: Path) -> Path:
             }
         ],
     )
-

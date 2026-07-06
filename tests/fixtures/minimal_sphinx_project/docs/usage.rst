@@ -2,4 +2,3 @@ Usage
 =====
 
 Minimal usage page.
-

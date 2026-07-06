@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import pytest
+from conftest import copy_fixture, write_config
 
 from sphinxpress.config import load_config
 from sphinxpress.errors import ConfigError
-
-from conftest import copy_fixture, write_config
 
 
 def test_config_loads_minimal_valid_file(tmp_path):

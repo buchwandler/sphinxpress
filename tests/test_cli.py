@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from conftest import write_config
 from typer.testing import CliRunner
 
 from sphinxpress import cli
-
-from conftest import write_config
 
 runner = CliRunner()
 
