@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 from conftest import copy_fixture, write_config
 
 from sphinxpress.config import load_config
 from sphinxpress.env_manager import prepare_build_environment
+
+
+def _venv_exe(venv_path: Path, name: str) -> Path:
+    if sys.platform == "win32":
+        return venv_path / "Scripts" / f"{name}.exe"
+    return venv_path / "bin" / name
 
 
 def test_disabled_env_returns_configured_sphinx_build(monkeypatch, minimal_config_path):
@@ -41,9 +48,10 @@ def test_enabled_env_creates_venv_installs_packages_and_returns_local_sphinx_bui
 
     def fake_create(self, path):
         created.append(path)
-        (Path(path) / "bin").mkdir(parents=True)
-        (Path(path) / "bin" / "python").write_text("", encoding="utf-8")
-        (Path(path) / "bin" / "sphinx-build").write_text("", encoding="utf-8")
+        _venv_exe(Path(path), "python").parent.mkdir(parents=True, exist_ok=True)
+        _venv_exe(Path(path), "python").write_text("", encoding="utf-8")
+        _venv_exe(Path(path), "sphinx-build").write_text("", encoding="utf-8")
+
 
     def fake_run(command, *, check):
         commands.append(command)
@@ -54,10 +62,10 @@ def test_enabled_env_creates_venv_installs_packages_and_returns_local_sphinx_bui
     sphinx_build = prepare_build_environment(config, config.projects)
 
     assert created == [config.build.env.path]
-    assert sphinx_build == str(config.build.env.path / "bin" / "sphinx-build")
+    assert sphinx_build == str(_venv_exe(config.build.env.path, "sphinx-build"))
     assert commands == [
         [
-            str(config.build.env.path / "bin" / "python"),
+            str(_venv_exe(config.build.env.path, "python")),
             "-m",
             "pip",
             "install",
@@ -65,7 +73,7 @@ def test_enabled_env_creates_venv_installs_packages_and_returns_local_sphinx_bui
             "pip",
         ],
         [
-            str(config.build.env.path / "bin" / "python"),
+            str(_venv_exe(config.build.env.path, "python")),
             "-m",
             "pip",
             "install",
@@ -93,9 +101,9 @@ def test_enabled_env_skips_install_when_fingerprint_matches(monkeypatch, tmp_pat
     config = load_config(config_path)
 
     def fake_create(self, path):
-        (Path(path) / "bin").mkdir(parents=True, exist_ok=True)
-        (Path(path) / "bin" / "python").write_text("", encoding="utf-8")
-        (Path(path) / "bin" / "sphinx-build").write_text("", encoding="utf-8")
+        _venv_exe(Path(path), "python").parent.mkdir(parents=True, exist_ok=True)
+        _venv_exe(Path(path), "python").write_text("", encoding="utf-8")
+        _venv_exe(Path(path), "sphinx-build").write_text("", encoding="utf-8")
 
     monkeypatch.setattr("sphinxpress.env_manager.venv.EnvBuilder.create", fake_create)
     monkeypatch.setattr(
@@ -109,7 +117,7 @@ def test_enabled_env_skips_install_when_fingerprint_matches(monkeypatch, tmp_pat
     monkeypatch.setattr("sphinxpress.env_manager.subprocess.run", fail_run)
 
     assert prepare_build_environment(config, config.projects) == str(
-        config.build.env.path / "bin" / "sphinx-build"
+        _venv_exe(config.build.env.path, "sphinx-build")
     )
 
 
