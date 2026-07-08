@@ -111,3 +111,23 @@ def test_enabled_env_skips_install_when_fingerprint_matches(monkeypatch, tmp_pat
     assert prepare_build_environment(config, config.projects) == str(
         config.build.env.path / "bin" / "sphinx-build"
     )
+
+
+def test_project_scoped_managed_env_is_rejected_for_v0_1(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path,
+        projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}],
+        extra="""
+        [build.env]
+        enabled = true
+        scope = "project"
+        """,
+    )
+
+    import pytest
+
+    from sphinxpress.errors import ConfigError
+
+    with pytest.raises(ConfigError, match="build.env.scope.*shared"):
+        load_config(config_path)

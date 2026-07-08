@@ -54,8 +54,11 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
     if not isinstance(env_data, dict):
         raise ConfigError("Configuration field 'env' must be a table.")
     env_scope = _string(env_data, "scope", default="shared")
-    if env_scope not in {"shared", "project"}:
-        raise ConfigError("Configuration field 'scope' must be 'shared' or 'project'.")
+    if env_scope != "shared":
+        raise ConfigError(
+            "Configuration field 'build.env.scope' must be 'shared'. "
+            "Project-scoped managed environments are reserved for a future release."
+        )
     env = BuildEnvConfig(
         enabled=_bool(env_data, "enabled", default=False),
         scope=env_scope,
