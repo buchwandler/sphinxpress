@@ -28,6 +28,8 @@ def write_config(
         release_tag_line = ""
         if project.get("release_tag"):
             release_tag_line = f'release_tag = "{project["release_tag"]}"\n'
+        docs_root_val = project["docs_root"].replace(chr(92), "/")
+        conf_dir_val = project.get("conf_dir", docs_root_val).replace(chr(92), "/")
         repo_url_default = "https://example.com/" + project["name"]
         project_blocks.append(
             textwrap.dedent(
@@ -35,8 +37,8 @@ def write_config(
                 [[projects]]
                 name = "{project["name"]}"
                 title = "{project.get("title", project["name"])}"
-                docs_root = "{project["docs_root"].replace(chr(92), '/')}"
-                conf_dir = "{project.get("conf_dir", project["docs_root"]).replace(chr(92), '/')}"
+                docs_root = "{docs_root_val}"
+                conf_dir = "{conf_dir_val}"
                 root_doc = "{project.get("root_doc", "index")}"
                 repo_url = "{project.get("repo_url", repo_url_default)}"
                 release_strategy = "{project.get("release_strategy", "manual")}"
@@ -49,7 +51,7 @@ def write_config(
     config_content = textwrap.dedent(
         f"""
         [site]
-        root = "{root.replace(chr(92), '/')}"
+        root = "{root.replace(chr(92), "/")}"
         base_url = "https://example.com"
         tools_dir = "tools"
         nav_data_dir = "_data/tool_nav"

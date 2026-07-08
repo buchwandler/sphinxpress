@@ -52,7 +52,6 @@ def test_enabled_env_creates_venv_installs_packages_and_returns_local_sphinx_bui
         _venv_exe(Path(path), "python").write_text("", encoding="utf-8")
         _venv_exe(Path(path), "sphinx-build").write_text("", encoding="utf-8")
 
-
     def fake_run(command, *, check):
         commands.append(command)
 
