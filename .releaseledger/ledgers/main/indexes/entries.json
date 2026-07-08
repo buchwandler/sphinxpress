@@ -9,9 +9,7 @@
     "record_revision": 1,
     "release_version": "v0.1.1",
     "scopes": [],
-    "source_refs": [
-      "git:0dbe946c343735b62d9a2c7f104c00693a58f973"
-    ],
+    "source_refs": ["git:0dbe946c343735b62d9a2c7f104c00693a58f973"],
     "status": "accepted",
     "summary": "Strip Sphinx headerlink permalinks from generated HTML pages"
   },
@@ -25,9 +23,7 @@
     "record_revision": 2,
     "release_version": "v0.1.1",
     "scopes": [],
-    "source_refs": [
-      "git:54a5044dc77ca851fd3f0b5a597cb6abbf4b33be"
-    ],
+    "source_refs": ["git:54a5044dc77ca851fd3f0b5a597cb6abbf4b33be"],
     "status": "accepted",
     "summary": "Fix trailing-slash handling in toctree href parsing and update tests"
   }
