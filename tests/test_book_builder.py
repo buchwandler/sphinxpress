@@ -4,6 +4,7 @@ from conftest import copy_fixture, write_config
 
 from sphinxpress.book_builder import build_book, create_aggregate_project
 from sphinxpress.config import load_config
+from sphinxpress.errors import ValidationError
 
 
 def test_book_builder_creates_aggregate_project(tmp_path, minimal_project_root):
@@ -87,6 +88,58 @@ def test_book_builder_copies_project_docs_under_unique_prefixes(tmp_path):
 
     assert (aggregate.source_dir / "projects" / "booktx" / "index.rst").exists()
     assert (aggregate.source_dir / "projects" / "epub2text" / "index.rst").exists()
+
+
+def test_collect_extensions_does_not_execute_conf_py(tmp_path, minimal_project_root):
+    marker = tmp_path / "executed"
+    conf_py = minimal_project_root / "docs" / "conf.py"
+    conf_py.write_text(
+        "extensions = ['myst_parser']\n"
+        f"open({str(marker)!r}, 'w', encoding='utf-8').write('executed')\n",
+        encoding="utf-8",
+    )
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    aggregate = create_aggregate_project(config, config.projects)
+
+    assert not marker.exists()
+    assert "myst_parser" in (aggregate.source_dir / "conf.py").read_text(
+        encoding="utf-8"
+    )
+
+
+def test_collect_extensions_rejects_non_literal_list(tmp_path, minimal_project_root):
+    conf_py = minimal_project_root / "docs" / "conf.py"
+    conf_py.write_text(
+        "extensions = ['myst_parser'] + ['sphinx.ext.autodoc']\n",
+        encoding="utf-8",
+    )
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    import pytest
+
+    with pytest.raises(ValidationError, match="literal extensions list"):
+        create_aggregate_project(config, config.projects)
 
 
 def test_book_builder_builds_epub_for_minimal_project(

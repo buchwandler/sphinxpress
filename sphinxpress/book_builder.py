@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import runpy
+import ast
 import shutil
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from .env_manager import prepare_build_environment
 from .errors import ValidationError
 from .models import AggregateProject, AppConfig, BookFormat, ProjectConfig
 from .paths import copy_tree, ensure_within_root, reset_directory, write_text_if_changed
@@ -19,8 +20,10 @@ def build_book(
     projects: list[ProjectConfig],
     *,
     format_name: BookFormat,
+    sphinx_build: str | None = None,
 ) -> Path:
     aggregate = create_aggregate_project(config, projects)
+    sphinx_build = sphinx_build or prepare_build_environment(config, projects)
     if format_name == "epub":
         out_dir = aggregate.build_dir / "epub"
         run_sphinx(
@@ -30,7 +33,7 @@ def build_book(
             out_dir=out_dir,
             doctree_dir=aggregate.doctree_dir,
             fail_on_warning=config.build.fail_on_warning,
-            sphinx_build=config.build.sphinx_build,
+            sphinx_build=sphinx_build,
             parallel=config.build.parallel,
         )
         return _copy_artifact(out_dir, "*.epub", config.epub.output)
@@ -42,7 +45,7 @@ def build_book(
         out_dir=aggregate.build_dir,
         doctree_dir=aggregate.doctree_dir,
         fail_on_warning=config.build.fail_on_warning,
-        sphinx_build=config.build.sphinx_build,
+        sphinx_build=sphinx_build,
         parallel=config.build.parallel,
     )
     return _copy_artifact(aggregate.build_dir, "*.pdf", config.pdf.output)
@@ -97,11 +100,36 @@ def create_aggregate_project(
 def _collect_extensions(projects: list[ProjectConfig]) -> list[str]:
     extensions: set[str] = set()
     for project in projects:
-        namespace = runpy.run_path(str(project.conf_py))
-        raw_extensions = namespace.get("extensions", [])
-        if isinstance(raw_extensions, list):
-            extensions.update(item for item in raw_extensions if isinstance(item, str))
+        extensions.update(_read_literal_extensions(project.conf_py))
     return sorted(extensions)
+
+
+def _read_literal_extensions(conf_py: Path) -> list[str]:
+    tree = ast.parse(conf_py.read_text(encoding="utf-8"), filename=str(conf_py))
+    for statement in tree.body:
+        if not isinstance(statement, ast.Assign):
+            continue
+        assigns_extensions = any(
+            isinstance(target, ast.Name) and target.id == "extensions"
+            for target in statement.targets
+        )
+        if not assigns_extensions:
+            continue
+        try:
+            value = ast.literal_eval(statement.value)
+        except (SyntaxError, ValueError) as exc:
+            raise ValidationError(
+                f"Aggregate book builds require a literal extensions list in {conf_py}."
+            ) from exc
+        invalid_extensions = not isinstance(value, list) or not all(
+            isinstance(item, str) for item in value
+        )
+        if invalid_extensions:
+            raise ValidationError(
+                f"Aggregate book builds require a literal extensions list in {conf_py}."
+            )
+        return value
+    return []
 
 
 def _copy_artifact(search_root: Path, pattern: str, destination: Path) -> Path:

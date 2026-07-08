@@ -84,3 +84,65 @@ def test_config_resolves_relative_paths_from_config_file_location(tmp_path):
     config = load_config(config_path)
 
     assert config.projects[0].docs_root == (project_root / "docs").resolve()
+
+
+def test_build_env_defaults_disabled(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path,
+        projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}],
+    )
+
+    config = load_config(config_path)
+
+    assert config.build.env.enabled is False
+    assert config.build.env.scope == "shared"
+    assert config.build.env.python == "python3"
+    assert config.build.env.path == tmp_path / ".sphinxpress" / "venv"
+    assert config.build.env.upgrade_pip is True
+    assert config.build.env.packages == []
+
+
+def test_build_env_parses_and_resolves_editable_paths(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path,
+        projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}],
+        extra="""
+        [build.env]
+        enabled = true
+        scope = "shared"
+        python = "python3.12"
+        path = ".docs-venv"
+        upgrade_pip = false
+        packages = ["sphinx>=7", "-e", "../local-package"]
+        """,
+    )
+
+    config = load_config(config_path)
+
+    assert config.build.env.enabled is True
+    assert config.build.env.scope == "shared"
+    assert config.build.env.python == "python3.12"
+    assert config.build.env.path == tmp_path / ".docs-venv"
+    assert config.build.env.upgrade_pip is False
+    assert config.build.env.packages == [
+        "sphinx>=7",
+        "-e",
+        str((tmp_path / ".." / "local-package").resolve()),
+    ]
+
+
+def test_build_env_rejects_unknown_scope(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path,
+        projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}],
+        extra="""
+        [build.env]
+        scope = "global"
+        """,
+    )
+
+    with pytest.raises(ConfigError, match="scope"):
+        load_config(config_path)

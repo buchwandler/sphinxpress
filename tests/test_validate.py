@@ -24,14 +24,14 @@ def test_validate_detects_broken_nav_entry(monkeypatch, tmp_path, minimal_projec
     config = load_config(config_path)
 
     monkeypatch.setattr(
-        "sphinxpress.validate._check_sphinx_available", lambda config: None
+        "sphinxpress.validate._check_sphinx_available", lambda command: None
     )
     monkeypatch.setattr(
         "sphinxpress.validate._run_builder_checks",
-        lambda config, projects, include_linkcheck: None,
+        lambda config, projects, include_linkcheck, sphinx_build: None,
     )
 
-    def fake_build_site(site_config, projects):
+    def fake_build_site(site_config, projects, *, sphinx_build):
         nav_root = site_config.site.root / site_config.site.nav_data_dir
         nav_root.mkdir(parents=True, exist_ok=True)
         (nav_root / "booktx.yml").write_text(
@@ -84,7 +84,7 @@ def test_validate_runs_dummy_builder(monkeypatch, minimal_config_path):
     seen = []
 
     monkeypatch.setattr(
-        "sphinxpress.validate._check_sphinx_available", lambda config: None
+        "sphinxpress.validate._check_sphinx_available", lambda command: None
     )
 
     def fake_run_sphinx(**kwargs):

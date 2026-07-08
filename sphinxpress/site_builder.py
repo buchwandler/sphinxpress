@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .env_manager import prepare_build_environment
 from .jekyll_writer import write_jekyll_page, write_tool_nav, write_tools_index
 from .models import AppConfig, NavEntry, PageRender, ProjectConfig
 from .paths import (
@@ -17,7 +18,12 @@ from .release import resolve_release_metadata
 from .sphinx_runner import run_sphinx
 
 
-def build_site(config: AppConfig, projects: list[ProjectConfig]) -> list[Path]:
+def build_site(
+    config: AppConfig,
+    projects: list[ProjectConfig],
+    *,
+    sphinx_build: str | None = None,
+) -> list[Path]:
     work_root = config.build.work_dir / "site"
     if not config.build.keep_build_dir:
         reset_directory(work_root)
@@ -27,9 +33,12 @@ def build_site(config: AppConfig, projects: list[ProjectConfig]) -> list[Path]:
     json_root = work_root / "json"
     outputs: list[Path] = []
     tool_links: list[tuple[str, str]] = []
+    sphinx_build = sphinx_build or prepare_build_environment(config, projects)
 
     for project in projects:
-        rendered_pages = _render_project_json(config, project, json_root / project.name)
+        rendered_pages = _render_project_json(
+            config, project, json_root / project.name, sphinx_build=sphinx_build
+        )
         release = resolve_release_metadata(config, project)
         entries: list[NavEntry] = []
 
@@ -79,6 +88,8 @@ def _render_project_json(
     config: AppConfig,
     project: ProjectConfig,
     out_dir: Path,
+    *,
+    sphinx_build: str | None = None,
 ) -> list[PageRender]:
     run_sphinx(
         builder="json",
@@ -87,7 +98,7 @@ def _render_project_json(
         out_dir=out_dir,
         doctree_dir=config.build.work_dir / "site" / "doctrees" / project.name,
         fail_on_warning=config.build.fail_on_warning,
-        sphinx_build=config.build.sphinx_build,
+        sphinx_build=sphinx_build or config.build.sphinx_build,
         parallel=config.build.parallel,
     )
     pages: list[PageRender] = []

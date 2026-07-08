@@ -18,6 +18,8 @@ itself.
 - build deterministic Jekyll pages from Sphinx JSON output
 - generate `_data/tool_nav/*.yml` navigation metadata for each project
 - create a temporary aggregate Sphinx project for combined EPUB/PDF builds
+- optionally create and reuse a managed Sphinx/docs virtual environment under
+  `.sphinxpress/` for project-specific docs dependencies
 - resolve release metadata from manual tags, git tags, or project
   `pyproject.toml`
 
@@ -48,6 +50,20 @@ sphinx_build = "sphinx-build"
 fail_on_warning = true
 keep_build_dir = false
 parallel = "auto"
+
+[build.env]
+enabled = false
+scope = "shared"
+python = "python3"
+path = ".sphinxpress/venv"
+upgrade_pip = true
+packages = [
+  "sphinx>=7",
+  "myst-parser",
+  "sphinx-rtd-theme",
+  "-e", "../tool-a",
+  "-e", "../tool-b",
+]
 
 [book]
 title = "Example Documentation"
@@ -86,6 +102,18 @@ repo_url = "https://github.com/example/tool-b"
 release_strategy = "pyproject"
 ```
 
+`[build.env]` is opt-in. When `enabled = false`, commands use the
+`[build].sphinx_build` executable exactly as configured. When `enabled = true`,
+`sphinxpress` creates or refreshes the configured virtual environment, installs
+the listed packages with the venv Python, and runs Sphinx through the venv-local
+`sphinx-build`. This keeps the current Jekyll or shell Python environment
+separate from Sphinx extensions and runtime imports needed by autodoc.
+
+Package entries are passed to `pip install` in order. Path arguments after pip
+path flags such as `-e`, `--editable`, `-r`, `--requirement`, `-c`, and
+`--constraint` are resolved relative to `sphinxpress.toml`. Normal requirement
+specifiers such as `myst-parser` or `sphinx>=7` are left unchanged.
+
 ## Commands
 
 ```bash
@@ -108,6 +136,11 @@ sphinxpress add-project --name newtool --docs ../newtool/docs --repo https://git
 sphinxpress validate
 sphinxpress validate --linkcheck
 ```
+
+`check`, `validate`, `build-site`, `build-pdf`, `build-epub`, and `build-book`
+prepare the managed environment once per command when `[build.env].enabled` is
+true. They then pass the resulting venv-local `sphinx-build` executable through
+the Sphinx build steps.
 
 ## Output model
 
@@ -137,6 +170,10 @@ invoke the correct Sphinx builder:
 
 - EPUB: `sphinx-build -b epub`
 - PDF: `sphinx-build -M latexpdf`
+
+If a managed build environment is enabled, these builders use
+`[build.env].path`/`bin`/`sphinx-build` instead of resolving `sphinx-build` from
+the current process `PATH`.
 
 ## Release metadata
 

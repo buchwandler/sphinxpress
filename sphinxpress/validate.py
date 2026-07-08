@@ -6,6 +6,7 @@ import shutil
 from pathlib import Path
 
 from .book_builder import create_aggregate_project
+from .env_manager import prepare_build_environment
 from .errors import ValidationError
 from .jekyll_writer import parse_nav_yaml
 from .models import AppConfig, ProjectConfig
@@ -14,8 +15,11 @@ from .sphinx_runner import run_sphinx
 
 
 def run_check(config: AppConfig, projects: list[ProjectConfig]) -> None:
-    _check_sphinx_available(config)
-    _run_builder_checks(config, projects, include_linkcheck=False)
+    sphinx_build = prepare_build_environment(config, projects)
+    _check_sphinx_available(sphinx_build)
+    _run_builder_checks(
+        config, projects, include_linkcheck=False, sphinx_build=sphinx_build
+    )
 
 
 def run_validation(
@@ -24,14 +28,19 @@ def run_validation(
     *,
     include_linkcheck: bool,
 ) -> None:
-    _check_sphinx_available(config)
-    _run_builder_checks(config, projects, include_linkcheck=include_linkcheck)
-    _validate_generated_site(config, projects)
+    sphinx_build = prepare_build_environment(config, projects)
+    _check_sphinx_available(sphinx_build)
+    _run_builder_checks(
+        config,
+        projects,
+        include_linkcheck=include_linkcheck,
+        sphinx_build=sphinx_build,
+    )
+    _validate_generated_site(config, projects, sphinx_build=sphinx_build)
     _validate_aggregate_project(config, projects)
 
 
-def _check_sphinx_available(config: AppConfig) -> None:
-    command = config.build.sphinx_build
+def _check_sphinx_available(command: str) -> None:
     if Path(command).is_absolute():
         if not Path(command).exists():
             raise ValidationError(f"Sphinx build command '{command}' does not exist.")
@@ -47,6 +56,7 @@ def _run_builder_checks(
     projects: list[ProjectConfig],
     *,
     include_linkcheck: bool,
+    sphinx_build: str,
 ) -> None:
     for project in projects:
         for builder in ["dummy", *(["linkcheck"] if include_linkcheck else [])]:
@@ -64,15 +74,17 @@ def _run_builder_checks(
                 / project.name
                 / builder,
                 fail_on_warning=config.build.fail_on_warning,
-                sphinx_build=config.build.sphinx_build,
+                sphinx_build=sphinx_build,
                 parallel=config.build.parallel,
             )
 
 
-def _validate_generated_site(config: AppConfig, projects: list[ProjectConfig]) -> None:
+def _validate_generated_site(
+    config: AppConfig, projects: list[ProjectConfig], *, sphinx_build: str
+) -> None:
     validation_root = config.build.work_dir / "validation-site"
     site_config = config.with_site_root(validation_root)
-    outputs = build_site(site_config, projects)
+    outputs = build_site(site_config, projects, sphinx_build=sphinx_build)
     if not outputs:
         raise ValidationError("Site build produced no generated files.")
 

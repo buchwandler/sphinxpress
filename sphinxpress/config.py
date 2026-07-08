@@ -13,6 +13,7 @@ from .models import (
     AppConfig,
     BookConfig,
     BuildConfig,
+    BuildEnvConfig,
     OutputConfig,
     ProjectConfig,
     ReleaseConfig,
@@ -49,6 +50,24 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         layout=_string(site_data, "layout", default="tool-doc"),
         title=_string(site_data, "title"),
     )
+    env_data = build_data.get("env", {})
+    if not isinstance(env_data, dict):
+        raise ConfigError("Configuration field 'env' must be a table.")
+    env_scope = _string(env_data, "scope", default="shared")
+    if env_scope not in {"shared", "project"}:
+        raise ConfigError("Configuration field 'scope' must be 'shared' or 'project'.")
+    env = BuildEnvConfig(
+        enabled=_bool(env_data, "enabled", default=False),
+        scope=env_scope,
+        python=_string(env_data, "python", default="python3"),
+        path=resolve_path(
+            base_dir, _string(env_data, "path", default=".sphinxpress/venv")
+        ),
+        upgrade_pip=_bool(env_data, "upgrade_pip", default=True),
+        packages=_resolve_package_paths(
+            base_dir, _string_list(env_data.get("packages"), default=[])
+        ),
+    )
     build = BuildConfig(
         work_dir=resolve_path(
             base_dir, _string(build_data, "work_dir", default=".sphinxpress")
@@ -57,6 +76,7 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         fail_on_warning=_bool(build_data, "fail_on_warning", default=True),
         keep_build_dir=_bool(build_data, "keep_build_dir", default=False),
         parallel=_string(build_data, "parallel", default="auto"),
+        env=env,
     )
     project_names = [
         item.get("name") for item in projects_data if isinstance(item, dict)
@@ -256,3 +276,17 @@ def _string_list(value: Any, *, default: list[str]) -> list[str]:
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         raise ConfigError("Configuration list values must contain only strings.")
     return list(value)
+
+
+def _resolve_package_paths(base_dir: Path, packages: list[str]) -> list[str]:
+    resolved: list[str] = []
+    path_flags = {"-e", "--editable", "-r", "--requirement", "-c", "--constraint"}
+    next_is_path = False
+    for package in packages:
+        if next_is_path:
+            resolved.append(str(resolve_path(base_dir, package)))
+            next_is_path = False
+            continue
+        resolved.append(package)
+        next_is_path = package in path_flags
+    return resolved

@@ -23,12 +23,23 @@ class SiteConfig:
 
 
 @dataclass(frozen=True)
+class BuildEnvConfig:
+    enabled: bool
+    scope: Literal["shared", "project"]
+    python: str
+    path: Path
+    upgrade_pip: bool
+    packages: list[str]
+
+
+@dataclass(frozen=True)
 class BuildConfig:
     work_dir: Path
     sphinx_build: str
     fail_on_warning: bool
     keep_build_dir: bool
     parallel: str
+    env: BuildEnvConfig
 
 
 @dataclass(frozen=True)
