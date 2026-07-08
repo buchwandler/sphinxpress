@@ -35,8 +35,8 @@ def write_config(
                 [[projects]]
                 name = "{project["name"]}"
                 title = "{project.get("title", project["name"])}"
-                docs_root = "{project["docs_root"]}"
-                conf_dir = "{project.get("conf_dir", project["docs_root"])}"
+                docs_root = "{project["docs_root"].replace(chr(92), '/')}"
+                conf_dir = "{project.get("conf_dir", project["docs_root"]).replace(chr(92), '/')}"
                 root_doc = "{project.get("root_doc", "index")}"
                 repo_url = "{project.get("repo_url", repo_url_default)}"
                 release_strategy = "{project.get("release_strategy", "manual")}"
@@ -49,7 +49,7 @@ def write_config(
     config_content = textwrap.dedent(
         f"""
         [site]
-        root = "{root}"
+        root = "{root.replace(chr(92), '/')}"
         base_url = "https://example.com"
         tools_dir = "tools"
         nav_data_dir = "_data/tool_nav"
