@@ -252,8 +252,12 @@ def test_site_builder_orders_nav_by_root_toctree(
                     "body": """
                     <div class="toctree-wrapper compound">
                       <ul>
-                        <li><a class="reference internal" href="quickstart.html">Quickstart</a></li>
-                        <li><a class="reference internal" href="project-layout.html">Project layout</a></li>
+                        <li><a class="reference internal" href="quickstart/">
+                          Quickstart</a></li>
+                        <li><a class="reference internal" href="quickstart/#setup">
+                          Setup</a></li>
+                        <li><a class="reference internal" href="project-layout/">
+                          Project layout</a></li>
                       </ul>
                     </div>
                     """,
@@ -298,7 +302,7 @@ def test_site_builder_excludes_internal_pages_from_toctree_nav(
                     "title": "Overview",
                     "body": """
                     <div class="toctree-wrapper compound">
-                      <a href="quickstart.html">Quickstart</a>
+                      <a href="quickstart/">Quickstart</a>
                       <a href="genindex.html">Index</a>
                       <a href="py-modindex.html">Module index</a>
                       <a href="search.html">Search</a>

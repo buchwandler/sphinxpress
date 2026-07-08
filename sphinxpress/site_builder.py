@@ -218,7 +218,7 @@ def _docname_from_html_href(href: str) -> str | None:
     if path.startswith("/"):
         return None
     if path.endswith("/"):
-        path = f"{path}index"
+        path = path.rstrip("/")
     if path.endswith(".html"):
         path = path[: -len(".html")]
     parts = Path(path).parts
