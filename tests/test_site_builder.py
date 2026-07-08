@@ -140,6 +140,45 @@ def test_site_builder_uses_project_release_tag(
     assert payload["release_tag"] == "v1.2.3"
 
 
+def test_site_builder_skips_jekyll_hidden_sphinx_internal_pages(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    def fake_run_sphinx(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "index.fjson").write_text(
+            json.dumps({"title": "booktx", "body": "<p>Index</p>"}),
+            encoding="utf-8",
+        )
+        modules_dir = out_dir / "_modules" / "booktx"
+        modules_dir.mkdir(parents=True, exist_ok=True)
+        (modules_dir / "acceptance.fjson").write_text(
+            json.dumps({"title": "booktx.acceptance", "body": "<p>source</p>"}),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr("sphinxpress.site_builder.run_sphinx", fake_run_sphinx)
+
+    outputs = build_site(config, config.projects)
+
+    assert tmp_path / "tools" / "booktx" / "index.md" in outputs
+    assert not (tmp_path / "tools" / "booktx" / "_modules").exists()
+    payload = parse_nav_yaml(tmp_path / "_data" / "tool_nav" / "booktx.yml")
+    assert [entry["slug"] for entry in payload["entries"]] == ["index"]
+
+
 def test_site_builder_rejects_path_traversal(
     monkeypatch, tmp_path, minimal_project_root
 ):
@@ -174,3 +213,160 @@ def test_site_builder_rejects_path_traversal(
 
     with pytest.raises(PathTraversalError):
         _render_project_json(config, project, tmp_path / "json")
+
+
+def test_site_builder_orders_nav_by_root_toctree(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    def fake_run_sphinx(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "project-layout.fjson").write_text(
+            json.dumps({"title": "Project layout", "body": "<p>Project layout</p>"}),
+            encoding="utf-8",
+        )
+        (out_dir / "quickstart.fjson").write_text(
+            json.dumps({"title": "Quickstart", "body": "<p>Quickstart</p>"}),
+            encoding="utf-8",
+        )
+        (out_dir / "orphan.fjson").write_text(
+            json.dumps({"title": "Orphan", "body": "<p>Not in toctree</p>"}),
+            encoding="utf-8",
+        )
+        (out_dir / "index.fjson").write_text(
+            json.dumps(
+                {
+                    "title": "Overview",
+                    "body": """
+                    <div class="toctree-wrapper compound">
+                      <ul>
+                        <li><a class="reference internal" href="quickstart.html">Quickstart</a></li>
+                        <li><a class="reference internal" href="project-layout.html">Project layout</a></li>
+                      </ul>
+                    </div>
+                    """,
+                }
+            ),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr("sphinxpress.site_builder.run_sphinx", fake_run_sphinx)
+
+    build_site(config, config.projects)
+
+    payload = parse_nav_yaml(tmp_path / "_data" / "tool_nav" / "booktx.yml")
+    assert [entry["slug"] for entry in payload["entries"]] == [
+        "index",
+        "quickstart",
+        "project-layout",
+    ]
+
+
+def test_site_builder_excludes_internal_pages_from_toctree_nav(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    def fake_run_sphinx(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "index.fjson").write_text(
+            json.dumps(
+                {
+                    "title": "Overview",
+                    "body": """
+                    <div class="toctree-wrapper compound">
+                      <a href="quickstart.html">Quickstart</a>
+                      <a href="genindex.html">Index</a>
+                      <a href="py-modindex.html">Module index</a>
+                      <a href="search.html">Search</a>
+                      <a href="_modules/booktx/acceptance.html">Source</a>
+                    </div>
+                    """,
+                }
+            ),
+            encoding="utf-8",
+        )
+        (out_dir / "quickstart.fjson").write_text(
+            json.dumps({"title": "Quickstart", "body": "<p>Quickstart</p>"}),
+            encoding="utf-8",
+        )
+        for docname in ["genindex", "py-modindex", "search"]:
+            (out_dir / f"{docname}.fjson").write_text(
+                json.dumps({"title": docname, "body": f"<p>{docname}</p>"}),
+                encoding="utf-8",
+            )
+        modules_dir = out_dir / "_modules" / "booktx"
+        modules_dir.mkdir(parents=True, exist_ok=True)
+        (modules_dir / "acceptance.fjson").write_text(
+            json.dumps({"title": "Source", "body": "<p>Source</p>"}),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr("sphinxpress.site_builder.run_sphinx", fake_run_sphinx)
+
+    build_site(config, config.projects)
+
+    payload = parse_nav_yaml(tmp_path / "_data" / "tool_nav" / "booktx.yml")
+    assert [entry["slug"] for entry in payload["entries"]] == [
+        "index",
+        "quickstart",
+    ]
+
+
+def test_site_builder_falls_back_to_sorted_nav_without_root_toctree(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    def fake_run_sphinx(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for docname in ["zebra", "index", "alpha", "search"]:
+            (out_dir / f"{docname}.fjson").write_text(
+                json.dumps({"title": docname.title(), "body": f"<p>{docname}</p>"}),
+                encoding="utf-8",
+            )
+
+    monkeypatch.setattr("sphinxpress.site_builder.run_sphinx", fake_run_sphinx)
+
+    build_site(config, config.projects)
+
+    payload = parse_nav_yaml(tmp_path / "_data" / "tool_nav" / "booktx.yml")
+    assert [entry["slug"] for entry in payload["entries"]] == [
+        "index",
+        "alpha",
+        "zebra",
+    ]

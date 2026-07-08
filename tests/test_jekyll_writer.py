@@ -62,3 +62,31 @@ def test_jekyll_writer_writes_nav_yaml(tmp_path):
     payload = parse_nav_yaml(nav_path)
     assert payload["release_tag"] == "v0.4.0"
     assert payload["entries"][0]["url"] == "/tools/booktx/"
+
+
+def test_jekyll_writer_strips_sphinx_headerlinks(tmp_path):
+    site = SiteConfig(
+        root=tmp_path,
+        base_url="https://example.com",
+        tools_dir=Path("tools"),
+        nav_data_dir=Path("_data/tool_nav"),
+        layout="tool-doc",
+        title="Docs",
+    )
+
+    output = write_jekyll_page(
+        site=site,
+        relative_path=Path("tools/booktx/troubleshooting.md"),
+        title="Troubleshooting",
+        permalink="/tools/booktx/troubleshooting/",
+        nav_tool="booktx",
+        body_html=(
+            '<h1>Troubleshooting<a class="headerlink" '
+            'href="#troubleshooting" title="Link to this heading">¶</a></h1>'
+        ),
+    )
+
+    content = output.read_text(encoding="utf-8")
+    assert "Troubleshooting" in content
+    assert "headerlink" not in content
+    assert "¶" not in content

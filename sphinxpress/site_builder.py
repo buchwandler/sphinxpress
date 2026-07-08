@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 from .env_manager import prepare_build_environment
 from .jekyll_writer import write_jekyll_page, write_tool_nav, write_tools_index
@@ -40,8 +42,6 @@ def build_site(
             config, project, json_root / project.name, sphinx_build=sphinx_build
         )
         release = resolve_release_metadata(config, project)
-        entries: list[NavEntry] = []
-
         for page in rendered_pages:
             written = write_jekyll_page(
                 site=config.site,
@@ -52,13 +52,15 @@ def build_site(
                 body_html=page.body_html,
             )
             outputs.append(written)
-            entries.append(
-                NavEntry(
-                    slug=page.docname,
-                    title=page.title,
-                    url=page.permalink,
-                )
+
+        entries = [
+            NavEntry(
+                slug=page.docname,
+                title=page.title,
+                url=page.permalink,
             )
+            for page in _ordered_nav_pages(project, rendered_pages)
+        ]
 
         nav_path = write_tool_nav(
             site=config.site,
@@ -108,6 +110,8 @@ def _render_project_json(
         if not isinstance(body_html, str):
             continue
         docname = json_path.relative_to(out_dir).with_suffix("").as_posix()
+        if _is_jekyll_hidden_docname(docname):
+            continue
         relative_page_path = (
             config.site.tools_dir / project.name / docname_to_output_path(docname)
         )
@@ -124,6 +128,10 @@ def _render_project_json(
     return pages
 
 
+def _is_jekyll_hidden_docname(docname: str) -> bool:
+    return any(part.startswith("_") for part in Path(docname).parts)
+
+
 def _page_title(project: ProjectConfig, docname: str, raw_title: object) -> str:
     title = (
         raw_title if isinstance(raw_title, str) and raw_title.strip() else project.title
@@ -135,3 +143,93 @@ def _page_title(project: ProjectConfig, docname: str, raw_title: object) -> str:
     if title.lower().startswith(project.title.lower()):
         return title
     return f"{project.title} {title}"
+
+
+class _SphinxToctreeParser(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._inside_stack: list[bool] = []
+        self.hrefs: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        attrs_dict = {name: value or "" for name, value in attrs}
+        classes = set(attrs_dict.get("class", "").split())
+        inside = bool(self._inside_stack and self._inside_stack[-1]) or (
+            "toctree-wrapper" in classes
+        )
+        self._inside_stack.append(inside)
+        if inside and tag == "a":
+            href = attrs_dict.get("href")
+            if href:
+                self.hrefs.append(href)
+
+    def handle_endtag(self, tag: str) -> None:
+        if self._inside_stack:
+            self._inside_stack.pop()
+
+
+def _ordered_nav_pages(
+    project: ProjectConfig, rendered_pages: list[PageRender]
+) -> list[PageRender]:
+    pages_by_docname = {page.docname: page for page in rendered_pages}
+    ordered_docnames: list[str] = []
+    seen: set[str] = set()
+
+    def append_docname(docname: str) -> None:
+        if docname in pages_by_docname and docname not in seen:
+            ordered_docnames.append(docname)
+            seen.add(docname)
+
+    append_docname(project.root_doc)
+
+    root_page = pages_by_docname.get(project.root_doc)
+    toctree_docnames = (
+        _extract_toctree_docnames(root_page.body_html) if root_page else []
+    )
+    for docname in toctree_docnames:
+        append_docname(docname)
+
+    if not toctree_docnames:
+        for docname in sorted(pages_by_docname):
+            if not _is_sphinx_internal_docname(docname):
+                append_docname(docname)
+
+    return [pages_by_docname[docname] for docname in ordered_docnames]
+
+
+def _extract_toctree_docnames(body_html: str) -> list[str]:
+    parser = _SphinxToctreeParser()
+    parser.feed(body_html)
+    docnames: list[str] = []
+    seen: set[str] = set()
+    for href in parser.hrefs:
+        docname = _docname_from_html_href(href)
+        if docname and docname not in seen and not _is_sphinx_internal_docname(docname):
+            docnames.append(docname)
+            seen.add(docname)
+    return docnames
+
+
+def _docname_from_html_href(href: str) -> str | None:
+    split = urlsplit(href)
+    if split.scheme or split.netloc or not split.path:
+        return None
+    path = unquote(split.path)
+    if path.startswith("/"):
+        return None
+    if path.endswith("/"):
+        path = f"{path}index"
+    if path.endswith(".html"):
+        path = path[: -len(".html")]
+    parts = Path(path).parts
+    if not parts or ".." in parts or parts == (".",):
+        return None
+    return Path(*parts).as_posix()
+
+
+def _is_sphinx_internal_docname(docname: str) -> bool:
+    return _is_jekyll_hidden_docname(docname) or docname in {
+        "genindex",
+        "py-modindex",
+        "search",
+    }

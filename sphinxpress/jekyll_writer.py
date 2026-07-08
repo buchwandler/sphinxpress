@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import yaml
@@ -10,6 +11,16 @@ from jinja2 import Environment, FileSystemLoader
 
 from .models import NavEntry, ProjectConfig, ReleaseMetadata, SiteConfig
 from .paths import ensure_within_root, generated_notice, write_text_if_changed
+
+_HEADERLINK_RE = re.compile(
+    r"""<a\s+[^>]*class=(["'])[^"']*\bheaderlink\b[^"']*\1[^>]*>.*?</a>""",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def strip_sphinx_headerlinks(body_html: str) -> str:
+    """Remove Sphinx heading permalink anchors from generated page HTML."""
+    return _HEADERLINK_RE.sub("", body_html)
 
 
 def write_jekyll_page(
@@ -31,7 +42,7 @@ def write_jekyll_page(
             permalink=permalink,
             nav_tool=nav_tool,
             generated_notice=generated_notice(),
-            body_html=body_html.strip(),
+            body_html=strip_sphinx_headerlinks(body_html.strip()),
         )
     )
     write_text_if_changed(destination, content)
