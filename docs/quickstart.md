@@ -22,6 +22,8 @@ parallel = "auto"
 title = "Example Documentation"
 author = "Example Team"
 language = "en"
+version = "0.1.0"
+copyright = "2026, Example Team"
 project_order = ["tool-a"]
 
 [pdf]

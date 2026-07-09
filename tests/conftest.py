@@ -69,6 +69,8 @@ def write_config(
         title = "Example Book"
         author = "Test Author"
         language = "en"
+        version = "0.1.0"
+        copyright = "2026, Test Author"
         project_order = [{", ".join(f'"{project["name"]}"' for project in projects)}]
 
         [pdf]

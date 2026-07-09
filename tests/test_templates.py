@@ -23,11 +23,22 @@ def test_aggregate_conf_template_renders_valid_python_literals():
             title="Example Book",
             author="Example Team",
             language="en",
+            version="0.1.0",
+            copyright="2026, Example Team",
+            suppress_warnings=["ref.python"],
             extensions=["myst_parser"],
             python_paths=["/workspace/tool-a"],
         )
     )
     assert 'project = "Example Book"' in rendered
+    assert 'version = "0.1.0"' in rendered
+    assert "release = version" in rendered
+    assert 'copyright = "2026, Example Team"' in rendered
+    assert "epub_title = project" in rendered
+    assert "epub_author = author" in rendered
+    assert "epub_language = language" in rendered
+    assert "epub_copyright = copyright" in rendered
+    assert 'suppress_warnings = ["ref.python"]' in rendered
     assert 'extensions = ["myst_parser"]' in rendered
     assert '_python_paths = ["/workspace/tool-a"]' in rendered
 

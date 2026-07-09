@@ -21,6 +21,8 @@ parallel = "1"
 title = "Fixture Documentation"
 author = "sphinxpress"
 language = "en"
+version = "0.1.0"
+copyright = "2026, sphinxpress"
 project_order = ["booktx", "epub2text"]
 
 [pdf]

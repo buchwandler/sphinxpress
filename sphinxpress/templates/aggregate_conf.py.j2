@@ -5,9 +5,20 @@ import sys
 project = {{ title | tojson }}
 author = {{ author | tojson }}
 language = {{ language | tojson }}
+version = {{ version | tojson }}
+release = version
+copyright = {{ copyright | tojson }}
+
 root_doc = "index"
 master_doc = "index"
+
+epub_title = project
+epub_author = author
+epub_language = language
+epub_copyright = copyright
+
 extensions = {{ extensions | tojson }}
+suppress_warnings = {{ suppress_warnings | tojson }}
 
 _python_paths = {{ python_paths | tojson }}
 for _path in reversed(_python_paths):

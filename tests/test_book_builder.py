@@ -43,6 +43,11 @@ def test_book_builder_writes_aggregate_conf_py(tmp_path, minimal_project_root):
 
     content = (aggregate.source_dir / "conf.py").read_text(encoding="utf-8")
     assert 'project = "Example Book"' in content
+    assert 'version = "0.1.0"' in content
+    assert "release = version" in content
+    assert 'copyright = "2026, Test Author"' in content
+    assert "epub_copyright = copyright" in content
+    assert "suppress_warnings = []" in content
 
 
 def test_book_builder_writes_project_python_paths(tmp_path, minimal_project_root):

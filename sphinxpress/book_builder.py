@@ -82,6 +82,9 @@ def create_aggregate_project(
         title=config.book.title,
         author=config.book.author,
         language=config.book.language,
+        version=config.book.version,
+        copyright=config.book.copyright,
+        suppress_warnings=config.book.suppress_warnings,
         extensions=extensions,
         python_paths=python_paths,
     )

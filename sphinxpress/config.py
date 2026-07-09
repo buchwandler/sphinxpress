@@ -89,10 +89,14 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
     project_names = [
         item.get("name") for item in projects_data if isinstance(item, dict)
     ]
+    book_author = _string(book_data, "author", default=site.title)
     book = BookConfig(
         title=_string(book_data, "title", default=site.title),
-        author=_string(book_data, "author", default=""),
+        author=book_author,
         language=_string(book_data, "language", default="en"),
+        version=_string(book_data, "version", default="latest"),
+        copyright=_string(book_data, "copyright", default=book_author),
+        suppress_warnings=_string_list(book_data.get("suppress_warnings"), default=[]),
         project_order=_string_list(
             book_data.get("project_order"),
             default=[name for name in project_names if isinstance(name, str)],

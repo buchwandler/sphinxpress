@@ -16,6 +16,19 @@ Use `[build.env]` to enable a shared managed virtual environment for Sphinx and 
 
 `[book]`, `[epub]`, and `[pdf]` configure aggregate book metadata and output paths.
 
+EPUB builds should provide non-empty `version` and `copyright` values:
+
+```toml
+[book]
+title = "Example Documentation"
+author = "Example Team"
+language = "en"
+version = "0.1.0"
+copyright = "2026, Example Team"
+```
+
+Use `suppress_warnings = ["ref.python"]` only as a temporary aggregate-book workaround for ambiguous Python cross-references that cannot yet be fixed in source docs.
+
 ## Projects
 
 Each `[[projects]]` entry points to one existing Sphinx documentation project:

@@ -47,6 +47,9 @@ class BookConfig:
     title: str
     author: str
     language: str
+    version: str
+    copyright: str
+    suppress_warnings: list[str]
     project_order: list[str]
 
 

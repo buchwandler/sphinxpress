@@ -25,6 +25,42 @@ def test_config_loads_minimal_valid_file(tmp_path):
     assert config.site.title == "Example Docs"
     assert config.projects[0].name == "booktx"
     assert config.projects[0].conf_py.exists()
+    assert config.book.version == "0.1.0"
+    assert config.book.copyright == "2026, Test Author"
+    assert config.book.suppress_warnings == []
+
+
+def test_config_defaults_book_epub_metadata(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = tmp_path / "sphinxpress.toml"
+    config_path.write_text(
+        f'''
+[site]
+root = "site"
+base_url = "https://example.com"
+title = "Example Docs"
+
+[book]
+title = "Example Book"
+author = "Example Team"
+
+[[projects]]
+name = "booktx"
+title = "booktx"
+docs_root = "{project_root / "docs"}"
+conf_dir = "{project_root / "docs"}"
+root_doc = "index"
+repo_url = "https://github.com/example/booktx"
+release_strategy = "manual"
+''',
+        encoding="utf-8",
+    )
+
+    config = load_config(config_path)
+
+    assert config.book.version == "latest"
+    assert config.book.copyright == "Example Team"
+    assert config.book.suppress_warnings == []
 
 
 def test_config_rejects_duplicate_project_names(tmp_path):
