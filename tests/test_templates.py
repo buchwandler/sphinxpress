@@ -24,10 +24,12 @@ def test_aggregate_conf_template_renders_valid_python_literals():
             author="Example Team",
             language="en",
             extensions=["myst_parser"],
+            python_paths=["/workspace/tool-a"],
         )
     )
     assert 'project = "Example Book"' in rendered
     assert 'extensions = ["myst_parser"]' in rendered
+    assert '_python_paths = ["/workspace/tool-a"]' in rendered
 
 
 def test_jekyll_page_template_renders_front_matter():
@@ -42,3 +44,12 @@ def test_jekyll_page_template_renders_front_matter():
     )
     assert rendered.startswith("---\n")
     assert "nav_tool: tool-a" in rendered
+
+
+def test_aggregate_index_template_indents_toctree_entries():
+    rendered = (
+        book_templates()
+        .get_template("aggregate_index.rst.j2")
+        .render(title="Example Book", docnames=["projects/booktx/index"])
+    )
+    assert "\n   projects/booktx/index\n" in rendered

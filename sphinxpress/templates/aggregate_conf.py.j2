@@ -1,9 +1,19 @@
+from __future__ import annotations
+
+import sys
+
 project = {{ title | tojson }}
 author = {{ author | tojson }}
 language = {{ language | tojson }}
 root_doc = "index"
 master_doc = "index"
 extensions = {{ extensions | tojson }}
+
+_python_paths = {{ python_paths | tojson }}
+for _path in reversed(_python_paths):
+    if _path not in sys.path:
+        sys.path.insert(0, _path)
+
 templates_path = []
 exclude_patterns = []
 html_static_path = []

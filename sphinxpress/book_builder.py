@@ -12,6 +12,7 @@ from .env_manager import prepare_build_environment
 from .errors import ValidationError
 from .models import AggregateProject, AppConfig, BookFormat, ProjectConfig
 from .paths import copy_tree, ensure_within_root, reset_directory, write_text_if_changed
+from .release import find_project_root
 from .sphinx_runner import run_sphinx
 
 
@@ -68,6 +69,7 @@ def create_aggregate_project(
 
     project_docnames: list[str] = []
     extensions = _collect_extensions(projects)
+    python_paths = _collect_python_paths(projects)
     projects_root = source_dir / "projects"
 
     for project in projects:
@@ -81,6 +83,7 @@ def create_aggregate_project(
         author=config.book.author,
         language=config.book.language,
         extensions=extensions,
+        python_paths=python_paths,
     )
     index_content = env.get_template("aggregate_index.rst.j2").render(
         title=config.book.title,
@@ -95,6 +98,23 @@ def create_aggregate_project(
         build_dir=build_dir,
         doctree_dir=doctree_dir,
     )
+
+
+def _collect_python_paths(projects: list[ProjectConfig]) -> list[str]:
+    paths: list[str] = []
+    seen: set[str] = set()
+    for project in projects:
+        project_root = find_project_root(project)
+        candidates = [project_root]
+        src_dir = project_root / "src"
+        if src_dir.exists():
+            candidates.append(src_dir)
+        for candidate in candidates:
+            resolved = str(candidate.resolve())
+            if resolved not in seen:
+                paths.append(resolved)
+                seen.add(resolved)
+    return paths
 
 
 def _collect_extensions(projects: list[ProjectConfig]) -> list[str]:

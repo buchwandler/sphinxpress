@@ -45,6 +45,32 @@ def test_book_builder_writes_aggregate_conf_py(tmp_path, minimal_project_root):
     assert 'project = "Example Book"' in content
 
 
+def test_book_builder_writes_project_python_paths(tmp_path, minimal_project_root):
+    (minimal_project_root / "pyproject.toml").write_text(
+        "[project]\nname = 'booktx'\nversion = '0.4.0'\n",
+        encoding="utf-8",
+    )
+    (minimal_project_root / "src").mkdir()
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    aggregate = create_aggregate_project(config, config.projects)
+
+    content = (aggregate.source_dir / "conf.py").read_text(encoding="utf-8")
+    assert str(minimal_project_root.resolve()) in content
+    assert str((minimal_project_root / "src").resolve()) in content
+    assert "sys.path.insert(0, _path)" in content
+
+
 def test_book_builder_writes_aggregate_index_rst(tmp_path, minimal_project_root):
     config_path = write_config(
         tmp_path,
@@ -61,7 +87,7 @@ def test_book_builder_writes_aggregate_index_rst(tmp_path, minimal_project_root)
     aggregate = create_aggregate_project(config, config.projects)
 
     content = (aggregate.source_dir / "index.rst").read_text(encoding="utf-8")
-    assert "projects/booktx/index" in content
+    assert "\n   projects/booktx/index\n" in content
 
 
 def test_book_builder_copies_project_docs_under_unique_prefixes(tmp_path):
