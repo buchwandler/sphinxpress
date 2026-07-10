@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import platform
 import sys
@@ -12,6 +11,7 @@ from pathlib import Path
 from .command_log import run_logged_command
 from .errors import ValidationError
 from .models import AppConfig, ProjectConfig
+from .release import find_project_root, resolve_release_tag
 
 _FINGERPRINT_FILE = ".sphinxpress-env.json"
 
@@ -25,7 +25,8 @@ def prepare_build_environment(config: AppConfig, projects: list[ProjectConfig]) 
     env.path.mkdir(parents=True, exist_ok=True)
     venv.EnvBuilder(with_pip=True).create(env.path)
     python = _venv_executable(env.path, "python")
-    fingerprint = _fingerprint(config, projects)
+    install_packages = _resolved_install_packages(config, projects)
+    fingerprint = _fingerprint(config, projects, install_packages)
     fingerprint_path = env.path / _FINGERPRINT_FILE
 
     if _read_fingerprint(fingerprint_path) != fingerprint:
@@ -35,10 +36,10 @@ def prepare_build_environment(config: AppConfig, projects: list[ProjectConfig]) 
                 [str(python), "-m", "pip", "install", "--upgrade", "pip"],
                 "env-pip-upgrade",
             )
-        if env.packages:
+        if install_packages:
             _run_pip(
                 config,
-                [str(python), "-m", "pip", "install", *env.packages],
+                [str(python), "-m", "pip", "install", *install_packages],
                 "env-pip-install",
             )
         fingerprint_path.write_text(
@@ -92,30 +93,119 @@ def _read_fingerprint(path: Path) -> dict[str, object] | None:
     return None
 
 
-def _fingerprint(config: AppConfig, projects: list[ProjectConfig]) -> dict[str, object]:
+def _fingerprint(
+    config: AppConfig,
+    projects: list[ProjectConfig],
+    install_packages: list[str],
+) -> dict[str, object]:
     return {
         "python": config.build.env.python,
         "runtime_python": platform.python_version(),
-        "packages": config.build.env.packages,
-        "local_projects": [
-            _local_project_fingerprint(package) for package in config.build.env.packages
-        ],
+        "packages": install_packages,
         "project_names": [project.name for project in projects],
     }
 
 
-def _local_project_fingerprint(package: str) -> dict[str, object] | None:
-    path = Path(package)
-    if not path.is_absolute() or not path.exists():
-        return None
-    pyproject = path / "pyproject.toml"
-    if not pyproject.exists():
-        return {"path": str(path), "pyproject": None}
-    content = pyproject.read_bytes()
-    return {
-        "path": str(path),
-        "pyproject": {
-            "mtime_ns": pyproject.stat().st_mtime_ns,
-            "sha256": hashlib.sha256(content).hexdigest(),
-        },
-    }
+def _resolved_install_packages(
+    config: AppConfig, projects: list[ProjectConfig]
+) -> list[str]:
+    """Return pip install arguments without editable local installs.
+
+    Editable project paths in ``[build.env].packages`` are converted to exact
+    package requirements using the configured project release tag. This keeps
+    the temporary build venv reproducible and prevents pip from mixing local
+    development versions with released dependency constraints.
+    """
+    packages = config.build.env.packages
+    project_paths = _project_path_index(projects)
+    resolved: list[str] = []
+    index = 0
+    while index < len(packages):
+        package = packages[index]
+        if package in {"-e", "--editable"}:
+            if index + 1 >= len(packages):
+                raise ValidationError(
+                    f"Managed build environment package '{package}' requires a path."
+                )
+            resolved.append(
+                _pinned_requirement_for_editable(
+                    config,
+                    package_value=packages[index + 1],
+                    project_paths=project_paths,
+                )
+            )
+            index += 2
+            continue
+        if package.startswith("--editable="):
+            resolved.append(
+                _pinned_requirement_for_editable(
+                    config,
+                    package_value=package.split("=", 1)[1],
+                    project_paths=project_paths,
+                )
+            )
+            index += 1
+            continue
+        resolved.append(package)
+        index += 1
+    return resolved
+
+
+def _project_path_index(projects: list[ProjectConfig]) -> dict[Path, ProjectConfig]:
+    indexed: dict[Path, ProjectConfig] = {}
+    for project in projects:
+        project_root = find_project_root(project).resolve()
+        for path in {
+            project_root,
+            project.docs_root.resolve(),
+            project.conf_dir.resolve(),
+            project.docs_root.parent.resolve(),
+            project.conf_dir.parent.resolve(),
+        }:
+            indexed[path] = project
+    return indexed
+
+
+def _pinned_requirement_for_editable(
+    config: AppConfig,
+    *,
+    package_value: str,
+    project_paths: dict[Path, ProjectConfig],
+) -> str:
+    path_value, extras = _split_editable_extras(package_value)
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = (config.config_path.parent / path).resolve()
+    else:
+        path = path.resolve()
+
+    project = project_paths.get(path)
+    if project is None:
+        raise ValidationError(
+            "Managed build environments no longer install editable local paths. "
+            f"Could not map editable path '{package_value}' to a configured "
+            "project. Replace it with an exact requirement such as "
+            "'package==version'."
+        )
+
+    tag = resolve_release_tag(config, project)
+    version = _version_from_tag(config, tag)
+    return f"{project.name}{extras}=={version}"
+
+
+def _split_editable_extras(package_value: str) -> tuple[str, str]:
+    if package_value.endswith("]") and "[" in package_value:
+        path_value, extras = package_value.rsplit("[", 1)
+        return path_value, f"[{extras}"
+    return package_value, ""
+
+
+def _version_from_tag(config: AppConfig, tag: str) -> str:
+    prefix = config.release.tag_prefix
+    if prefix and tag.startswith(prefix):
+        version = tag[len(prefix) :]
+    else:
+        version = tag
+    if not version:
+        raise ValidationError(f"Release tag '{tag}' did not contain a package version.")
+    return version

@@ -16,7 +16,7 @@ packages = [
   "myst-parser",
   "sphinx-rtd-theme",
   "weasyprint>=67",
-  "-e", "../tool-a",
+  "tool-a==0.1.0",
 ]
 ```
 
@@ -28,6 +28,6 @@ you use the default WeasyPrint PDF backend.
 
 Pip upgrade and install failures during managed environment setup are reported as a sphinxpress `ValidationError` and include the `env-pip-upgrade` or `env-pip-install` log path from `[build].log_dir`. The corresponding latest log file contains the full pip stdout, stderr, and return code.
 
-Package path arguments after `-e`, `--editable`, `-r`, `--requirement`, `-c`, and `--constraint` are resolved relative to `sphinxpress.toml`.
+Use exact package requirements for project packages, for example `tool-a==0.1.0`. Legacy editable entries that match a configured project path are converted to `project-name==release-version` using the project release tag with `[release].tag_prefix` stripped. Unmatched editable paths are rejected. Package path arguments after `-r`, `--requirement`, `-c`, and `--constraint` are resolved relative to `sphinxpress.toml`.
 
 For v0.1, only `scope = "shared"` is supported. `scope = "project"` is reserved for a future release and is rejected with a configuration error.
