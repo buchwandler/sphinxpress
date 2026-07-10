@@ -12,8 +12,8 @@ status: accepted
 audience: null
 scopes: []
 source_refs:
-- git:d07a2844c15560bf2223e9906e767914c1653ec8
-- git:fbb90efdfb8a4d97f624a03a86301af25a571dc4
+  - git:d07a2844c15560bf2223e9906e767914c1653ec8
+  - git:fbb90efdfb8a4d97f624a03a86301af25a571dc4
 paths: []
 issues: []
 prs: []
