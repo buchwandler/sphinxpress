@@ -18,3 +18,12 @@ By default, PDF builds render the aggregate docs as Sphinx `singlehtml`, apply
 small sphinxpress-owned print CSS/HTML adjustments, and convert the result to
 PDF with WeasyPrint. This avoids LaTeX for the default path. Set
 `[pdf].builder = "latexpdf"` to keep using the legacy LaTeX-based Sphinx build.
+
+## Build logs
+
+Every Sphinx, WeasyPrint, and managed-environment pip command writes a
+timestamped log under `[build].log_dir` (default `<work_dir>/logs`). Each run
+produces a `YYYYMMDDTHHMMSSZ-<stem>.log` file and a `latest-<stem>.log` copy
+that points at the most recent run. Failures include the relevant `Log:` path
+in the sphinxpress error message so the full stdout and stderr can be reviewed
+without rerunning the build.

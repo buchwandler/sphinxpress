@@ -35,6 +35,7 @@ class BuildEnvConfig:
 @dataclass(frozen=True)
 class BuildConfig:
     work_dir: Path
+    log_dir: Path
     sphinx_build: str
     fail_on_warning: bool
     keep_build_dir: bool

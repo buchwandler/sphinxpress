@@ -34,6 +34,13 @@ HTML to PDF without requiring LaTeX. Install the optional `pdf` extra or make
 `weasyprint>=67` available in the selected managed build environment. Set
 `[pdf].builder = "latexpdf"` to keep using the legacy LaTeX-based path.
 
+`sphinxpress build-pdf` performs a WeasyPrint preflight before the aggregate
+`singlehtml` build. If the configured `weasyprint` executable is missing, the
+command fails fast with an actionable message that points to
+`sphinxpress[pdf]` and `[build.env].packages` rather than running a full
+singlehtml build first. On any singlehtml or WeasyPrint failure, the error
+message points to the matching log file under `[build].log_dir`.
+
 ```bash
 sphinxpress build-pdf --all
 ```

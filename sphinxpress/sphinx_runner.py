@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
+from .command_log import run_logged_command
 from .errors import SphinxBuildError
 
 
@@ -65,6 +65,8 @@ def run_sphinx(
     extra_args: list[str] | None = None,
     sphinx_build: str = "sphinx-build",
     parallel: str | None = None,
+    log_dir: Path | None = None,
+    log_stem: str | None = None,
 ) -> None:
     command = build_sphinx_command(
         sphinx_build=sphinx_build,
@@ -79,12 +81,18 @@ def run_sphinx(
     )
     out_dir.parent.mkdir(parents=True, exist_ok=True)
     doctree_dir.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run(command, capture_output=True, text=True, check=False)
+    logged = run_logged_command(
+        command,
+        log_dir=log_dir,
+        log_stem=log_stem or f"sphinx-{builder}",
+    )
+    result = logged.result
     if result.returncode != 0:
         detail = "\n".join(
             part for part in [result.stdout.strip(), result.stderr.strip()] if part
         )
+        log_hint = f"\nLog: {logged.log_path}" if logged.log_path else ""
         raise SphinxBuildError(
             f"Sphinx builder '{builder}' failed with exit code {result.returncode}.\n"
-            f"Command: {' '.join(command)}\n{detail}".rstrip()
+            f"Command: {' '.join(command)}{log_hint}\n{detail}".rstrip()
         )

@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 import shutil
-import subprocess
 from pathlib import Path
 
-from .errors import ValidationError
+from .command_log import run_logged_command
+from .errors import SphinxBuildError, ValidationError
 from .models import AggregateProject, AppConfig
 from .paths import write_text_if_changed
 from .sphinx_runner import run_sphinx
@@ -25,20 +25,35 @@ def build_weasyprint_pdf(
     sphinx_build: str,
     weasyprint_command: str,
 ) -> Path:
+    if not _tool_available(weasyprint_command):
+        raise ValidationError(
+            "WeasyPrint executable was not found before PDF build. "
+            f"Expected: {weasyprint_command}. "
+            "Install sphinxpress[pdf] or add 'weasyprint>=67' to [build.env].packages."
+        )
+
     html_dir = aggregate.build_dir / "singlehtml"
     pdf_dir = aggregate.build_dir / "pdf"
     pdf_dir.mkdir(parents=True, exist_ok=True)
 
-    run_sphinx(
-        builder="singlehtml",
-        conf_dir=aggregate.source_dir,
-        src_dir=aggregate.source_dir,
-        out_dir=html_dir,
-        doctree_dir=aggregate.doctree_dir / "singlehtml",
-        fail_on_warning=config.build.fail_on_warning,
-        sphinx_build=sphinx_build,
-        parallel=config.build.parallel,
-    )
+    try:
+        run_sphinx(
+            builder="singlehtml",
+            conf_dir=aggregate.source_dir,
+            src_dir=aggregate.source_dir,
+            out_dir=html_dir,
+            doctree_dir=aggregate.doctree_dir / "singlehtml",
+            fail_on_warning=config.build.fail_on_warning,
+            sphinx_build=sphinx_build,
+            parallel=config.build.parallel,
+            log_dir=config.build.log_dir,
+            log_stem="book-pdf-singlehtml",
+        )
+    except SphinxBuildError as exc:
+        raise SphinxBuildError(
+            f"{exc}\nThe PDF was not rendered yet; this failed during aggregate "
+            "singlehtml generation."
+        ) from exc
 
     index_html = html_dir / "index.html"
     if not index_html.exists():
@@ -53,6 +68,8 @@ def build_weasyprint_pdf(
         weasyprint_command=weasyprint_command,
         input_html=index_html,
         output_pdf=built_pdf,
+        log_dir=config.build.log_dir,
+        log_stem="book-pdf-weasyprint",
     )
     if not built_pdf.exists():
         raise ValidationError(f"Expected WeasyPrint output at {built_pdf}.")
@@ -148,20 +165,35 @@ def run_weasyprint(
     weasyprint_command: str,
     input_html: Path,
     output_pdf: Path,
+    log_dir: Path | None = None,
+    log_stem: str = "book-pdf-weasyprint",
 ) -> None:
     command = [weasyprint_command, str(input_html), str(output_pdf)]
     try:
-        result = subprocess.run(command, capture_output=True, text=True, check=False)
+        logged = run_logged_command(
+            command,
+            log_dir=log_dir,
+            log_stem=log_stem,
+        )
     except FileNotFoundError as exc:
         raise ValidationError(
             f"WeasyPrint executable '{weasyprint_command}' was not found."
         ) from exc
 
+    result = logged.result
     if result.returncode != 0:
         detail = "\n".join(
             part for part in [result.stdout.strip(), result.stderr.strip()] if part
         )
+        log_hint = f"\nLog: {logged.log_path}" if logged.log_path else ""
         raise ValidationError(
             "WeasyPrint PDF generation failed with exit code "
-            f"{result.returncode}.\nCommand: {' '.join(command)}\n{detail}".rstrip()
+            f"{result.returncode}.\n"
+            f"Command: {' '.join(command)}{log_hint}\n{detail}".rstrip()
         )
+
+def _tool_available(command: str) -> bool:
+    path = Path(command)
+    if path.is_absolute() or len(path.parts) > 1:
+        return path.exists()
+    return shutil.which(command) is not None

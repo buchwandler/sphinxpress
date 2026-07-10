@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import textwrap
+
 import pytest
 from conftest import copy_fixture, write_config
 
@@ -183,3 +185,72 @@ def test_build_env_rejects_unknown_scope(tmp_path):
 
     with pytest.raises(ConfigError, match="scope"):
         load_config(config_path)
+
+
+def test_build_log_dir_defaults_to_work_dir_logs(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path, projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}]
+    )
+    config = load_config(config_path)
+    assert config.build.log_dir == (config.build.work_dir / "logs").resolve()
+
+
+def test_build_log_dir_can_be_configured(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = tmp_path / "sphinxpress.toml"
+    config_path.write_text(
+        textwrap.dedent(
+            f"""
+            [site]
+            root = "."
+            base_url = "https://example.com"
+            tools_dir = "tools"
+            nav_data_dir = "_data/tool_nav"
+            layout = "tool-doc"
+            title = "Example Docs"
+
+            [build]
+            work_dir = ".sphinxpress"
+            log_dir = "custom-logs"
+            sphinx_build = "sphinx-build"
+            fail_on_warning = true
+            keep_build_dir = false
+            parallel = "1"
+
+            [book]
+            title = "Example Book"
+            author = "Test Author"
+            language = "en"
+            version = "0.1.0"
+            copyright = "2026, Test Author"
+            project_order = ["booktx"]
+
+            [pdf]
+            builder = "latexpdf"
+            output = "dist/example.pdf"
+
+            [epub]
+            builder = "epub"
+            output = "dist/example.epub"
+
+            [release]
+            tag_prefix = "v"
+            release_url_template = "{{repo_url}}/releases/tag/{{tag}}"
+
+            [[projects]]
+            name = "booktx"
+            title = "booktx"
+            docs_root = "{project_root / 'docs'}"
+            conf_dir = "{project_root / 'docs'}"
+            root_doc = "index"
+            repo_url = "https://example.com/booktx"
+            release_strategy = "manual"
+            release_tag = "v0.4.0"
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    config = load_config(config_path)
+    assert config.build.log_dir == (tmp_path / "custom-logs").resolve()

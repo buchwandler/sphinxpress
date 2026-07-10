@@ -16,6 +16,17 @@ def _venv_exe(venv_path: Path, name: str) -> Path:
     return venv_path / "bin" / name
 
 
+def _noop_logged_result():
+    from sphinxpress.command_log import LoggedResult
+
+    class _Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    return LoggedResult(result=_Result(), log_path=None)
+
+
 def test_disabled_env_returns_configured_sphinx_build(monkeypatch, minimal_config_path):
     config = load_config(minimal_config_path)
 
@@ -53,11 +64,19 @@ def test_enabled_env_creates_venv_installs_packages_and_returns_local_sphinx_bui
         _venv_exe(Path(path), "python").write_text("", encoding="utf-8")
         _venv_exe(Path(path), "sphinx-build").write_text("", encoding="utf-8")
 
-    def fake_run(command, *, check):
+    def fake_run_logged(command, *, log_dir, log_stem, cwd=None):
         commands.append(command)
+        from sphinxpress.command_log import LoggedResult
+
+        class _Result:
+            returncode = 0
+            stdout = ""
+            stderr = ""
+
+        return LoggedResult(result=_Result(), log_path=None)
 
     monkeypatch.setattr("sphinxpress.env_manager.venv.EnvBuilder.create", fake_create)
-    monkeypatch.setattr("sphinxpress.env_manager.subprocess.run", fake_run)
+    monkeypatch.setattr("sphinxpress.env_manager.run_logged_command", fake_run_logged)
 
     sphinx_build = prepare_build_environment(config, config.projects)
 
@@ -105,16 +124,17 @@ def test_enabled_env_skips_install_when_fingerprint_matches(monkeypatch, tmp_pat
         _venv_exe(Path(path), "python").write_text("", encoding="utf-8")
         _venv_exe(Path(path), "sphinx-build").write_text("", encoding="utf-8")
 
+    def fake_run_logged(*args, **kwargs):
+        return _noop_logged_result()
+
     monkeypatch.setattr("sphinxpress.env_manager.venv.EnvBuilder.create", fake_create)
-    monkeypatch.setattr(
-        "sphinxpress.env_manager.subprocess.run", lambda *args, **kwargs: None
-    )
+    monkeypatch.setattr("sphinxpress.env_manager.run_logged_command", fake_run_logged)
     prepare_build_environment(config, config.projects)
 
     def fail_run(*args, **kwargs):
         raise AssertionError("pip install should be skipped for matching fingerprint")
 
-    monkeypatch.setattr("sphinxpress.env_manager.subprocess.run", fail_run)
+    monkeypatch.setattr("sphinxpress.env_manager.run_logged_command", fail_run)
 
     assert prepare_build_environment(config, config.projects) == str(
         _venv_exe(config.build.env.path, "sphinx-build")
@@ -157,3 +177,48 @@ def test_build_tool_executable_uses_managed_venv_when_enabled(tmp_path):
     assert build_tool_executable(config, "weasyprint") == str(
         _venv_exe(config.build.env.path, "weasyprint")
     )
+
+
+def test_env_manager_logs_pip_install_failure(monkeypatch, tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path,
+        projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}],
+        extra="""
+        [build.env]
+        enabled = true
+        path = ".sphinxpress/venv"
+        packages = ["sphinx>=7", "myst-parser"]
+        """,
+    )
+    config = load_config(config_path)
+
+    def fake_create(self, path):
+        _venv_exe(Path(path), "python").parent.mkdir(parents=True, exist_ok=True)
+        _venv_exe(Path(path), "python").write_text("", encoding="utf-8")
+        _venv_exe(Path(path), "sphinx-build").write_text("", encoding="utf-8")
+
+    class _Result:
+        def __init__(self):
+            self.returncode = 1
+            self.stdout = "out"
+            self.stderr = "err"
+
+    from sphinxpress.command_log import LoggedResult
+
+    monkeypatch.setattr("sphinxpress.env_manager.venv.EnvBuilder.create", fake_create)
+    monkeypatch.setattr(
+        "sphinxpress.env_manager.run_logged_command",
+        lambda *args, **kwargs: LoggedResult(
+            result=_Result(),
+            log_path=config.build.log_dir / "latest-env-pip-install.log",
+        ),
+    )
+
+    import pytest
+
+    from sphinxpress.errors import ValidationError
+
+    with pytest.raises(ValidationError, match="env-pip-install"):
+        prepare_build_environment(config, config.projects)
+

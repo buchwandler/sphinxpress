@@ -26,6 +26,8 @@ For PDF output, the same managed environment should also provide the
 `weasyprint` executable. Add `weasyprint>=67` to `[build.env].packages` when
 you use the default WeasyPrint PDF backend.
 
+Pip upgrade and install failures during managed environment setup are reported as a sphinxpress `ValidationError` and include the `env-pip-upgrade` or `env-pip-install` log path from `[build].log_dir`. The corresponding latest log file contains the full pip stdout, stderr, and return code.
+
 Package path arguments after `-e`, `--editable`, `-r`, `--requirement`, `-c`, and `--constraint` are resolved relative to `sphinxpress.toml`.
 
 For v0.1, only `scope = "shared"` is supported. `scope = "project"` is reserved for a future release and is rejected with a configuration error.

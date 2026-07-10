@@ -76,6 +76,8 @@ def _run_builder_checks(
                 fail_on_warning=config.build.fail_on_warning,
                 sphinx_build=sphinx_build,
                 parallel=config.build.parallel,
+                log_dir=config.build.log_dir,
+                log_stem=f"validate-{project.name}-{builder}",
             )
 
 

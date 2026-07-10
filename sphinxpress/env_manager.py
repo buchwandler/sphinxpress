@@ -5,11 +5,12 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
-import subprocess
 import sys
 import venv
 from pathlib import Path
 
+from .command_log import run_logged_command
+from .errors import ValidationError
 from .models import AppConfig, ProjectConfig
 
 _FINGERPRINT_FILE = ".sphinxpress-env.json"
@@ -29,14 +30,16 @@ def prepare_build_environment(config: AppConfig, projects: list[ProjectConfig]) 
 
     if _read_fingerprint(fingerprint_path) != fingerprint:
         if env.upgrade_pip:
-            subprocess.run(
+            _run_pip(
+                config,
                 [str(python), "-m", "pip", "install", "--upgrade", "pip"],
-                check=True,
+                "env-pip-upgrade",
             )
         if env.packages:
-            subprocess.run(
+            _run_pip(
+                config,
                 [str(python), "-m", "pip", "install", *env.packages],
-                check=True,
+                "env-pip-install",
             )
         fingerprint_path.write_text(
             json.dumps(fingerprint, indent=2, sort_keys=True) + "\n",
@@ -44,6 +47,24 @@ def prepare_build_environment(config: AppConfig, projects: list[ProjectConfig]) 
         )
 
     return str(_venv_executable(env.path, "sphinx-build"))
+
+
+def _run_pip(config: AppConfig, command: list[str], log_stem: str) -> None:
+    logged = run_logged_command(
+        command,
+        log_dir=config.build.log_dir,
+        log_stem=log_stem,
+    )
+    result = logged.result
+    if result.returncode != 0:
+        detail = "\n".join(
+            part for part in [result.stdout.strip(), result.stderr.strip()] if part
+        )
+        log_hint = f"\nLog: {logged.log_path}" if logged.log_path else ""
+        raise ValidationError(
+            "Managed build environment setup failed during pip command "
+            f"({log_stem}).{log_hint}\n{detail}".rstrip()
+        )
 
 
 def build_tool_executable(config: AppConfig, name: str) -> str:

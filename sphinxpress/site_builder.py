@@ -102,6 +102,8 @@ def _render_project_json(
         fail_on_warning=config.build.fail_on_warning,
         sphinx_build=sphinx_build or config.build.sphinx_build,
         parallel=config.build.parallel,
+        log_dir=config.build.log_dir,
+        log_stem=f"site-{project.name}-json",
     )
     pages: list[PageRender] = []
     for json_path in sorted(out_dir.rglob("*.fjson")):

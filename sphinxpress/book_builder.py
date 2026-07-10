@@ -37,6 +37,8 @@ def build_book(
             fail_on_warning=config.build.fail_on_warning,
             sphinx_build=sphinx_build,
             parallel=config.build.parallel,
+            log_dir=config.build.log_dir,
+            log_stem="book-epub-sphinx",
         )
         return _copy_artifact(out_dir, "*.epub", config.epub.output)
 
@@ -57,6 +59,8 @@ def build_book(
         fail_on_warning=config.build.fail_on_warning,
         sphinx_build=sphinx_build,
         parallel=config.build.parallel,
+        log_dir=config.build.log_dir,
+        log_stem="book-pdf-sphinx",
     )
     return _copy_artifact(aggregate.build_dir, "*.pdf", config.pdf.output)
 

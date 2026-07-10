@@ -76,10 +76,19 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
             base_dir, _string_list(env_data.get("packages"), default=[])
         ),
     )
-    build = BuildConfig(
-        work_dir=resolve_path(
-            base_dir, _string(build_data, "work_dir", default=".sphinxpress")
+    work_dir_raw = _string(build_data, "work_dir", default=".sphinxpress")
+    work_dir = resolve_path(base_dir, work_dir_raw)
+    log_dir = resolve_path(
+        base_dir,
+        _string(
+            build_data,
+            "log_dir",
+            default=str(Path(work_dir_raw) / "logs"),
         ),
+    )
+    build = BuildConfig(
+        work_dir=work_dir,
+        log_dir=log_dir,
         sphinx_build=_string(build_data, "sphinx_build", default="sphinx-build"),
         fail_on_warning=_bool(build_data, "fail_on_warning", default=True),
         keep_build_dir=_bool(build_data, "keep_build_dir", default=False),

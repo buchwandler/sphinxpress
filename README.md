@@ -95,6 +95,18 @@ required for the default path. Install the optional `pdf` extra or include
 `weasyprint>=67` in the managed build environment. The legacy `latexpdf`
 builder remains available when `[pdf].builder = "latexpdf"` is set explicitly.
 
+`build-pdf` preflights the configured WeasyPrint executable before the
+aggregate singlehtml build and reports the actionable `sphinxpress[pdf]` or
+`weasyprint>=67` guidance if it is missing, avoiding a wasted singlehtml run.
+
+## Build diagnostics
+
+Every Sphinx, WeasyPrint, and managed-environment pip run writes a log file
+under `[build].log_dir` (default `<work_dir>/logs`). The latest run for each
+stage is mirrored to `latest-<stem>.log`, and failure messages include the
+relevant `Log:` path. Use `[build].log_dir = "custom-logs"` in
+`sphinxpress.toml` to override the default location.
+
 ## Managed build environment
 
 `sphinxpress` can create one shared virtual environment for Sphinx and documentation dependencies:

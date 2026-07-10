@@ -2,6 +2,27 @@
 
 `sphinxpress` reads `sphinxpress.toml` from the current directory unless `--config` is provided.
 
+## Build logs
+
+`[build].log_dir` (default `<work_dir>/logs`) controls where sphinxpress writes timestamped command logs. The directory is created on demand. Each Sphinx, WeasyPrint, and managed-environment pip run writes one `YYYYMMDDTHHMMSSZ-<stem>.log` file plus a `latest-<stem>.log` copy that points at the most recent run. Stable log stems include:
+
+- `site-<project>-json`
+- `validate-<project>-dummy` and `validate-<project>-linkcheck`
+- `book-epub-sphinx`
+- `book-pdf-singlehtml`
+- `book-pdf-weasyprint`
+- `env-pip-upgrade` and `env-pip-install`
+
+Override the default location in `sphinxpress.toml`:
+
+```toml
+[build]
+work_dir = ".sphinxpress"
+log_dir = ".sphinxpress/logs"
+```
+
+Sphinx and WeasyPrint failures include the relevant `Log:` path so the full stdout and stderr can be inspected without rerunning the build.
+
 ## Site settings
 
 `[site]` controls generated Jekyll paths, layout names, and the public base URL.

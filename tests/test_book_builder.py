@@ -6,8 +6,8 @@ from conftest import copy_fixture, write_config
 
 from sphinxpress.book_builder import build_book, create_aggregate_project
 from sphinxpress.config import load_config
-from sphinxpress.errors import ValidationError
-from sphinxpress.html_pdf import patch_singlehtml_for_pdf
+from sphinxpress.errors import SphinxBuildError, ValidationError
+from sphinxpress.html_pdf import build_weasyprint_pdf, patch_singlehtml_for_pdf
 
 
 def test_book_builder_creates_aggregate_project(tmp_path, minimal_project_root):
@@ -236,9 +236,18 @@ def test_book_builder_builds_weasyprint_pdf_for_minimal_project(
             encoding="utf-8",
         )
 
-    def fake_run_weasyprint(*, weasyprint_command, input_html, output_pdf):
+    def fake_run_weasyprint(
+        *,
+        weasyprint_command,
+        input_html,
+        output_pdf,
+        log_dir=None,
+        log_stem="book-pdf-weasyprint",
+    ):
         seen["weasyprint_command"] = weasyprint_command
         seen["input_html"] = input_html
+        seen["log_dir"] = log_dir
+        seen["log_stem"] = log_stem
         output_pdf.parent.mkdir(parents=True, exist_ok=True)
         output_pdf.write_bytes(b"%PDF-1.4\n")
 
@@ -250,6 +259,8 @@ def test_book_builder_builds_weasyprint_pdf_for_minimal_project(
     assert seen["builder"] == "singlehtml"
     assert seen["weasyprint_command"] == "weasyprint"
     assert seen["input_html"].name == "index.html"
+    assert seen["log_stem"] == "book-pdf-weasyprint"
+    assert seen["log_dir"] == config.build.log_dir
     assert output == config.pdf.output
     assert output.read_bytes().startswith(b"%PDF")
 
@@ -296,3 +307,121 @@ def test_patch_singlehtml_for_pdf_rewrites_index_anchor_and_adds_css(tmp_path):
     content = html.read_text(encoding="utf-8")
     assert 'href="#usage"' in content
     assert "sphinxpress-pdf.css" in content
+
+
+def test_weasyprint_preflight_reports_missing_executable(tmp_path):
+    import pytest
+
+    from sphinxpress.models import AggregateProject
+
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path, projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}]
+    )
+    config = load_config(config_path)
+    aggregate = AggregateProject(
+        root=tmp_path / "agg",
+        source_dir=tmp_path / "agg" / "source",
+        build_dir=tmp_path / "agg" / "build",
+        doctree_dir=tmp_path / "agg" / "doctrees",
+    )
+    aggregate.source_dir.mkdir(parents=True)
+    aggregate.build_dir.mkdir(parents=True)
+    aggregate.doctree_dir.mkdir(parents=True)
+
+    with pytest.raises(ValidationError, match="weasyprint>=67"):
+        build_weasyprint_pdf(
+            config,
+            aggregate,
+            sphinx_build="sphinx-build",
+            weasyprint_command=str(tmp_path / "missing" / "weasyprint"),
+        )
+
+
+def test_build_pdf_preflights_weasyprint_before_singlehtml(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    import pytest
+
+    from sphinxpress.errors import ValidationError
+
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+            }
+        ],
+    )
+    config = load_config(config_path)
+    config = replace(
+        config,
+        pdf=replace(config.pdf, builder="weasyprint"),
+        build=replace(
+            config.build,
+            env=replace(config.build.env, enabled=True),
+        ),
+    )
+    config = replace(
+        config,
+        build=replace(
+            config.build,
+            env=replace(
+                config.build.env,
+                path=tmp_path / "missing-venv",
+            ),
+        ),
+    )
+
+    def fail_sphinx(*args, **kwargs):
+        raise AssertionError("run_sphinx must not run before WeasyPrint preflight")
+
+    monkeypatch.setattr("sphinxpress.html_pdf.run_sphinx", fail_sphinx)
+
+    missing = tmp_path / "does-not-exist" / "weasyprint"
+    with pytest.raises(ValidationError, match="weasyprint>=67"):
+        build_weasyprint_pdf(
+            config,
+            create_aggregate_project(config, config.projects),
+            sphinx_build="sphinx-build",
+            weasyprint_command=str(missing),
+        )
+
+
+def test_build_pdf_singlehtml_failure_message_references_log_path(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    import pytest
+
+    from sphinxpress.html_pdf import run_weasyprint as pdf_run_weasyprint
+
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+            }
+        ],
+    )
+    config = load_config(config_path)
+    config = replace(config, pdf=replace(config.pdf, builder="weasyprint"))
+    aggregate = create_aggregate_project(config, config.projects)
+    (config.build.log_dir).mkdir(parents=True, exist_ok=True)
+    weasyprint_bin = tmp_path / "fake-weasyprint"
+    weasyprint_bin.write_text("#!/bin/sh\n", encoding="utf-8")
+    weasyprint_bin.chmod(0o755)
+
+    def fail_sphinx(**kwargs):
+        raise SphinxBuildError("boom")
+
+    monkeypatch.setattr("sphinxpress.html_pdf.run_sphinx", fail_sphinx)
+    monkeypatch.setattr("sphinxpress.html_pdf.run_weasyprint", pdf_run_weasyprint)
+    with pytest.raises(SphinxBuildError, match="PDF was not rendered yet"):
+        build_weasyprint_pdf(
+            config,
+            aggregate,
+            sphinx_build="sphinx-build",
+            weasyprint_command=str(weasyprint_bin),
+        )
