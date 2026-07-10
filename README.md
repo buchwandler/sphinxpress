@@ -1,3 +1,7 @@
+[![PyPI - Version](https://img.shields.io/pypi/v/sphinxpress)](https://pypi.org/project/sphinxpress/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/sphinxpress)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/sphinxpress)
+
 # sphinxpress
 
 `sphinxpress` publishes multiple independent Sphinx documentation projects as one documentation product: generated Jekyll/GitHub Pages pages, a combined EPUB, and a combined PDF.
