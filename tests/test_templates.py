@@ -1,7 +1,13 @@
 from pathlib import Path
 
+import sphinxpress
 from sphinxpress.book_builder import _template_environment as book_templates
-from sphinxpress.jekyll_writer import _template_environment as jekyll_templates
+from sphinxpress.jekyll_writer import (
+    _template_environment as jekyll_templates,
+)
+from sphinxpress.jekyll_writer import (
+    site_api_css,
+)
 
 
 def test_template_files_are_packaged():
@@ -13,6 +19,11 @@ def test_template_files_are_packaged():
         "tool_nav.yml.j2",
     }
     assert expected <= {path.name for path in root.glob("*.j2")}
+
+
+def test_site_api_css_is_packaged():
+    root = Path("sphinxpress/templates")
+    assert (root / "site_api.css").is_file()
 
 
 def test_aggregate_conf_template_renders_valid_python_literals():
@@ -51,10 +62,14 @@ def test_jekyll_page_template_renders_front_matter():
         permalink="/tools/tool-a/",
         nav_tool="tool-a",
         generated_notice="<!-- generated -->",
+        site_css=site_api_css(),
         body_html="<p>Hello</p>",
     )
     assert rendered.startswith("---\n")
     assert "nav_tool: tool-a" in rendered
+    assert '<style data-sphinxpress-style="api">' in rendered
+    assert '<div class="sphinxpress-doc">' in rendered
+    assert "<p>Hello</p>" in rendered
 
 
 def test_aggregate_index_template_indents_toctree_entries():
@@ -64,3 +79,8 @@ def test_aggregate_index_template_indents_toctree_entries():
         .render(title="Example Book", docnames=["projects/booktx/index"])
     )
     assert "\n   projects/booktx/index\n" in rendered
+
+
+def test_site_api_css_is_installed_in_package():
+    template_dir = Path(sphinxpress.__file__).with_name("templates")
+    assert (template_dir / "site_api.css").is_file()

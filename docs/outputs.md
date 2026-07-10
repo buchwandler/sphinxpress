@@ -6,6 +6,8 @@
 
 `build-site` writes one page per Sphinx JSON document under the configured `site.root` and `site.tools_dir`.
 
+Each generated page is wrapped in a `<div class="sphinxpress-doc">` and is preceded by a `<style data-sphinxpress-style="api">` block that ships a small, scoped sphinxpress stylesheet for Sphinx document-body elements. The stylesheet targets Python API descriptions, field lists, inline literals, and source links produced by `sphinx.ext.autodoc`. All rules are scoped to the `.sphinxpress-doc` wrapper so the host Jekyll theme is not affected outside generated pages.
+
 ## Navigation data
 
 For each project, `build-site` writes a YAML file under `site.nav_data_dir`. Jekyll layouts can use this data to render project navigation.

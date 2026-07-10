@@ -9,6 +9,7 @@ It stays Sphinx-first. Each source project keeps its own `conf.py` and documenta
 ## Features
 
 - Build Jekyll pages from Sphinx JSON output.
+- Preserve readable Sphinx autodoc/API presentation in generated Jekyll pages with scoped, self-contained styling.
 - Write per-project navigation data for site layouts.
 - Build aggregate EPUB and PDF projects from selected Sphinx docs projects.
 - Resolve release metadata from manual tags, git tags, or project metadata.

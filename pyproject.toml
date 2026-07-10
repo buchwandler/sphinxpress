@@ -61,7 +61,7 @@ sphinxpress = "sphinxpress.cli:app"
 packages = ["sphinxpress", "sphinxpress.templates"]
 
 [tool.setuptools.package-data]
-sphinxpress = ["templates/*.j2"]
+sphinxpress = ["templates/*.j2", "templates/*.css"]
 
 [tool.setuptools_scm]
 version_file = "sphinxpress/_version.py"

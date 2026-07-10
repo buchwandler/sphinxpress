@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
@@ -21,6 +22,13 @@ _HEADERLINK_RE = re.compile(
 def strip_sphinx_headerlinks(body_html: str) -> str:
     """Remove Sphinx heading permalink anchors from generated page HTML."""
     return _HEADERLINK_RE.sub("", body_html)
+
+
+@lru_cache(maxsize=1)
+def site_api_css() -> str:
+    """Return the packaged sphinxpress API stylesheet for generated pages."""
+    template_dir = Path(__file__).with_name("templates")
+    return (template_dir / "site_api.css").read_text(encoding="utf-8").strip()
 
 
 def write_jekyll_page(
@@ -42,6 +50,7 @@ def write_jekyll_page(
             permalink=permalink,
             nav_tool=nav_tool,
             generated_notice=generated_notice(),
+            site_css=site_api_css(),
             body_html=strip_sphinx_headerlinks(body_html.strip()),
         )
     )

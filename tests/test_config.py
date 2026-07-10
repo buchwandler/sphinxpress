@@ -241,8 +241,8 @@ def test_build_log_dir_can_be_configured(tmp_path):
             [[projects]]
             name = "booktx"
             title = "booktx"
-            docs_root = "{project_root / 'docs'}"
-            conf_dir = "{project_root / 'docs'}"
+            docs_root = "{project_root / "docs"}"
+            conf_dir = "{project_root / "docs"}"
             root_doc = "index"
             repo_url = "https://example.com/booktx"
             release_strategy = "manual"

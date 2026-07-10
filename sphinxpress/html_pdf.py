@@ -192,6 +192,7 @@ def run_weasyprint(
             f"Command: {' '.join(command)}{log_hint}\n{detail}".rstrip()
         )
 
+
 def _tool_available(command: str) -> bool:
     path = Path(command)
     if path.is_absolute() or len(path.parts) > 1:

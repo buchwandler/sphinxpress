@@ -1,0 +1,156 @@
+.sphinxpress-doc {
+  --sp-api-border: #5aa9d6;
+  --sp-api-surface: #eaf5fb;
+  --sp-api-text: inherit;
+  --sp-api-name: #111827;
+  --sp-api-type: #1268a8;
+  --sp-api-source: #12823b;
+  --sp-api-code: #d33a2c;
+  --sp-api-code-border: #e5e7eb;
+  --sp-api-code-surface: #ffffff;
+}
+
+.sphinxpress-doc dl.py,
+.sphinxpress-doc dl.function,
+.sphinxpress-doc dl.method,
+.sphinxpress-doc dl.class,
+.sphinxpress-doc dl.attribute,
+.sphinxpress-doc dl.data,
+.sphinxpress-doc dl.exception {
+  margin: 1.5rem 0;
+}
+
+.sphinxpress-doc dl.py > dt.sig,
+.sphinxpress-doc dl > dt.sig-object {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border-top: 3px solid var(--sp-api-border);
+  background: var(--sp-api-surface);
+  color: var(--sp-api-text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.sphinxpress-doc dt.sig .sig-prename,
+.sphinxpress-doc dt.sig .descclassname {
+  color: var(--sp-api-name);
+  font-weight: 700;
+}
+
+.sphinxpress-doc dt.sig .sig-name,
+.sphinxpress-doc dt.sig .descname {
+  color: var(--sp-api-name);
+  font-weight: 800;
+}
+
+.sphinxpress-doc dt.sig .sig-param,
+.sphinxpress-doc dt.sig .sig-return,
+.sphinxpress-doc dt.sig .n,
+.sphinxpress-doc dt.sig .p,
+.sphinxpress-doc dt.sig .o,
+.sphinxpress-doc dt.sig .default_value {
+  white-space: normal;
+}
+
+.sphinxpress-doc dt.sig .property,
+.sphinxpress-doc dt.sig .kt,
+.sphinxpress-doc dt.sig .pre,
+.sphinxpress-doc dt.sig a.reference {
+  color: var(--sp-api-type);
+}
+
+.sphinxpress-doc dt.sig a.reference.internal[href*="_modules"],
+.sphinxpress-doc dt.sig a.viewcode-link {
+  margin-left: 0.75rem;
+  color: var(--sp-api-source);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.sphinxpress-doc dt.sig a.headerlink {
+  display: none;
+}
+
+.sphinxpress-doc dl.py > dd,
+.sphinxpress-doc dl > dd {
+  margin: 0;
+  padding: 0.55rem 0 0 1.6rem;
+}
+
+.sphinxpress-doc dl.py > dd > :first-child,
+.sphinxpress-doc dl > dd > :first-child {
+  margin-top: 0;
+}
+
+.sphinxpress-doc code.literal,
+.sphinxpress-doc tt.literal {
+  padding: 0.08em 0.32em;
+  border: 1px solid var(--sp-api-code-border);
+  border-radius: 0;
+  background: var(--sp-api-code-surface);
+  color: var(--sp-api-code);
+  font-size: 0.88em;
+}
+
+.sphinxpress-doc .field-list {
+  margin: 0.75rem 0;
+}
+
+.sphinxpress-doc .field-list th,
+.sphinxpress-doc .field-list dt {
+  font-weight: 700;
+}
+
+.sphinxpress-doc .field-list td,
+.sphinxpress-doc .field-list dd {
+  padding-left: 0.75rem;
+}
+
+@media (max-width: 48rem) {
+  .sphinxpress-doc dl.py > dt.sig,
+  .sphinxpress-doc dl > dt.sig-object {
+    font-size: 0.84rem;
+  }
+
+  .sphinxpress-doc dl.py > dd,
+  .sphinxpress-doc dl > dd {
+    padding-left: 0.85rem;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .sphinxpress-doc {
+    --sp-api-border: #62b5e5;
+    --sp-api-surface: #152733;
+    --sp-api-name: #f3f4f6;
+    --sp-api-type: #7dc8f5;
+    --sp-api-source: #70d58d;
+    --sp-api-code: #ff8a80;
+    --sp-api-code-border: #475569;
+    --sp-api-code-surface: #111827;
+  }
+}
+
+@media print {
+  .sphinxpress-doc dl.py > dt.sig,
+  .sphinxpress-doc dl > dt.sig-object {
+    border-top-color: #777;
+    background: #f2f2f2;
+    color: #000;
+  }
+
+  .sphinxpress-doc dt.sig a.reference.internal[href*="_modules"],
+  .sphinxpress-doc dt.sig a.viewcode-link {
+    display: none;
+  }
+}

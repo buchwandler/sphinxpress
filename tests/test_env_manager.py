@@ -221,4 +221,3 @@ def test_env_manager_logs_pip_install_failure(monkeypatch, tmp_path):
 
     with pytest.raises(ValidationError, match="env-pip-install"):
         prepare_build_environment(config, config.projects)
-
