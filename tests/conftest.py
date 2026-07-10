@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import shutil
 import textwrap
 from pathlib import Path
@@ -89,7 +90,10 @@ def write_config(
         """
     ).strip()
     if extra:
-        config_content = f"{config_content}\n\n{textwrap.dedent(extra).strip()}\n"
+        extra = textwrap.dedent(extra).strip()
+        if os.name == "nt":
+            extra = extra.replace(chr(92), "/")
+        config_content = f"{config_content}\n\n{extra}\n"
     config_path = tmp_path / "sphinxpress.toml"
     config_path.write_text(config_content + "\n", encoding="utf-8")
     return config_path

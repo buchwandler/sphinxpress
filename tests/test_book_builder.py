@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import replace
 
 from conftest import copy_fixture, write_config
@@ -79,8 +80,8 @@ def test_book_builder_writes_project_python_paths(tmp_path, minimal_project_root
     aggregate = create_aggregate_project(config, config.projects)
 
     content = (aggregate.source_dir / "conf.py").read_text(encoding="utf-8")
-    assert str(minimal_project_root.resolve()) in content
-    assert str((minimal_project_root / "src").resolve()) in content
+    assert json.dumps(str(minimal_project_root.resolve())) in content
+    assert json.dumps(str((minimal_project_root / "src").resolve())) in content
     assert "sys.path.insert(0, _path)" in content
 
 

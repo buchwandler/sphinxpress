@@ -34,6 +34,7 @@ def test_config_loads_minimal_valid_file(tmp_path):
 
 def test_config_defaults_book_epub_metadata(tmp_path):
     project_root = copy_fixture(tmp_path)
+    docs_root = str(project_root / "docs").replace(chr(92), "/")
     config_path = tmp_path / "sphinxpress.toml"
     config_path.write_text(
         f'''
@@ -49,8 +50,8 @@ author = "Example Team"
 [[projects]]
 name = "booktx"
 title = "booktx"
-docs_root = "{project_root / "docs"}"
-conf_dir = "{project_root / "docs"}"
+docs_root = "{docs_root}"
+conf_dir = "{docs_root}"
 root_doc = "index"
 repo_url = "https://github.com/example/booktx"
 release_strategy = "manual"
@@ -198,6 +199,7 @@ def test_build_log_dir_defaults_to_work_dir_logs(tmp_path):
 
 def test_build_log_dir_can_be_configured(tmp_path):
     project_root = copy_fixture(tmp_path)
+    docs_root = str(project_root / "docs").replace(chr(92), "/")
     config_path = tmp_path / "sphinxpress.toml"
     config_path.write_text(
         textwrap.dedent(
@@ -241,8 +243,8 @@ def test_build_log_dir_can_be_configured(tmp_path):
             [[projects]]
             name = "booktx"
             title = "booktx"
-            docs_root = "{project_root / "docs"}"
-            conf_dir = "{project_root / "docs"}"
+            docs_root = "{docs_root}"
+            conf_dir = "{docs_root}"
             root_doc = "index"
             repo_url = "https://example.com/booktx"
             release_strategy = "manual"
