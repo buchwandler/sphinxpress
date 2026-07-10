@@ -14,4 +14,7 @@ For each project, `build-site` writes a YAML file under `site.nav_data_dir`. Jek
 
 `build-epub` and `build-pdf` create a temporary aggregate Sphinx project under the configured work directory, then copy the final artifact to the configured output path.
 
-PDF builds use Sphinx's `latexpdf` builder and require LaTeX system packages outside Python.
+By default, PDF builds render the aggregate docs as Sphinx `singlehtml`, apply
+small sphinxpress-owned print CSS/HTML adjustments, and convert the result to
+PDF with WeasyPrint. This avoids LaTeX for the default path. Set
+`[pdf].builder = "latexpdf"` to keep using the legacy LaTeX-based Sphinx build.

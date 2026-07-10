@@ -8,8 +8,9 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from .env_manager import prepare_build_environment
+from .env_manager import build_tool_executable, prepare_build_environment
 from .errors import ValidationError
+from .html_pdf import build_weasyprint_pdf
 from .models import AggregateProject, AppConfig, BookFormat, ProjectConfig
 from .paths import copy_tree, ensure_within_root, reset_directory, write_text_if_changed
 from .release import find_project_root
@@ -38,6 +39,14 @@ def build_book(
             parallel=config.build.parallel,
         )
         return _copy_artifact(out_dir, "*.epub", config.epub.output)
+
+    if config.pdf.builder in {"weasyprint", "htmlpdf"}:
+        return build_weasyprint_pdf(
+            config,
+            aggregate,
+            sphinx_build=sphinx_build,
+            weasyprint_command=build_tool_executable(config, "weasyprint"),
+        )
 
     run_sphinx(
         builder=config.pdf.builder,

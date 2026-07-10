@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 from conftest import copy_fixture, write_config
 
 from sphinxpress.book_builder import build_book, create_aggregate_project
 from sphinxpress.config import load_config
 from sphinxpress.errors import ValidationError
+from sphinxpress.html_pdf import patch_singlehtml_for_pdf
 
 
 def test_book_builder_creates_aggregate_project(tmp_path, minimal_project_root):
@@ -48,6 +51,11 @@ def test_book_builder_writes_aggregate_conf_py(tmp_path, minimal_project_root):
     assert 'copyright = "2026, Test Author"' in content
     assert "epub_copyright = copyright" in content
     assert "suppress_warnings = []" in content
+    assert 'html_theme = "basic"' in content
+    assert "html_title = project" in content
+    assert "html_show_sourcelink = False" in content
+    assert "html_copy_source = False" in content
+    assert 'singlehtml_sidebars = {"index": []}' in content
 
 
 def test_book_builder_writes_project_python_paths(tmp_path, minimal_project_root):
@@ -201,7 +209,52 @@ def test_book_builder_builds_epub_for_minimal_project(
     assert output.exists()
 
 
-def test_book_builder_builds_pdf_command_for_minimal_project(
+def test_book_builder_builds_weasyprint_pdf_for_minimal_project(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+    config = replace(config, pdf=replace(config.pdf, builder="weasyprint"))
+    seen = {}
+
+    def fake_run_sphinx(**kwargs):
+        seen["builder"] = kwargs["builder"]
+        out_dir = kwargs["out_dir"]
+        (out_dir / "_static").mkdir(parents=True, exist_ok=True)
+        (out_dir / "index.html").write_text(
+            '<html><head></head><body><a href="index.html#usage">Usage</a>'
+            '<section id="usage"><h1>Usage</h1></section></body></html>',
+            encoding="utf-8",
+        )
+
+    def fake_run_weasyprint(*, weasyprint_command, input_html, output_pdf):
+        seen["weasyprint_command"] = weasyprint_command
+        seen["input_html"] = input_html
+        output_pdf.parent.mkdir(parents=True, exist_ok=True)
+        output_pdf.write_bytes(b"%PDF-1.4\n")
+
+    monkeypatch.setattr("sphinxpress.html_pdf.run_sphinx", fake_run_sphinx)
+    monkeypatch.setattr("sphinxpress.html_pdf.run_weasyprint", fake_run_weasyprint)
+
+    output = build_book(config, config.projects, format_name="pdf")
+
+    assert seen["builder"] == "singlehtml"
+    assert seen["weasyprint_command"] == "weasyprint"
+    assert seen["input_html"].name == "index.html"
+    assert output == config.pdf.output
+    assert output.read_bytes().startswith(b"%PDF")
+
+
+def test_book_builder_builds_latexpdf_when_explicitly_configured(
     monkeypatch, tmp_path, minimal_project_root
 ):
     config_path = write_config(
@@ -229,3 +282,17 @@ def test_book_builder_builds_pdf_command_for_minimal_project(
 
     assert seen["builder"] == "latexpdf"
     assert output == config.pdf.output
+
+
+def test_patch_singlehtml_for_pdf_rewrites_index_anchor_and_adds_css(tmp_path):
+    html = tmp_path / "index.html"
+    html.write_text(
+        '<html><head></head><body><a href="index.html#usage">Usage</a></body></html>',
+        encoding="utf-8",
+    )
+
+    patch_singlehtml_for_pdf(html, css_href="_static/sphinxpress-pdf.css")
+
+    content = html.read_text(encoding="utf-8")
+    assert 'href="#usage"' in content
+    assert "sphinxpress-pdf.css" in content

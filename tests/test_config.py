@@ -61,6 +61,7 @@ release_strategy = "manual"
     assert config.book.version == "latest"
     assert config.book.copyright == "Example Team"
     assert config.book.suppress_warnings == []
+    assert config.pdf.builder == "weasyprint"
 
 
 def test_config_rejects_duplicate_project_names(tmp_path):

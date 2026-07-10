@@ -7,7 +7,7 @@ from pathlib import Path
 from conftest import copy_fixture, write_config
 
 from sphinxpress.config import load_config
-from sphinxpress.env_manager import prepare_build_environment
+from sphinxpress.env_manager import build_tool_executable, prepare_build_environment
 
 
 def _venv_exe(venv_path: Path, name: str) -> Path:
@@ -25,6 +25,7 @@ def test_disabled_env_returns_configured_sphinx_build(monkeypatch, minimal_confi
     monkeypatch.setattr("sphinxpress.env_manager.venv.EnvBuilder.create", fail_create)
 
     assert prepare_build_environment(config, config.projects) == "sphinx-build"
+    assert build_tool_executable(config, "weasyprint") == "weasyprint"
 
 
 def test_enabled_env_creates_venv_installs_packages_and_returns_local_sphinx_build(
@@ -138,3 +139,21 @@ def test_project_scoped_managed_env_is_rejected_for_v0_1(tmp_path):
 
     with pytest.raises(ConfigError, match="build.env.scope.*shared"):
         load_config(config_path)
+
+
+def test_build_tool_executable_uses_managed_venv_when_enabled(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    config_path = write_config(
+        tmp_path,
+        projects=[{"name": "booktx", "docs_root": str(project_root / "docs")}],
+        extra="""
+        [build.env]
+        enabled = true
+        path = ".sphinxpress/venv"
+        """,
+    )
+    config = load_config(config_path)
+
+    assert build_tool_executable(config, "weasyprint") == str(
+        _venv_exe(config.build.env.path, "weasyprint")
+    )

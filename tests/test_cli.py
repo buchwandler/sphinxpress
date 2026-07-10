@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import subprocess
+import sys
+
 from conftest import write_config
 from typer.testing import CliRunner
 
@@ -64,3 +67,15 @@ def test_cli_add_project(tmp_path, minimal_project_root):
 
     assert result.exit_code == 0
     assert 'name = "newtool"' in config_path.read_text(encoding="utf-8")
+
+
+def test_cli_module_runs_as_python_module():
+    result = subprocess.run(
+        [sys.executable, "-m", "sphinxpress.cli", "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
+    assert "Publish multiple Sphinx projects" in result.stdout

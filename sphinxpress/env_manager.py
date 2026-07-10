@@ -46,6 +46,12 @@ def prepare_build_environment(config: AppConfig, projects: list[ProjectConfig]) 
     return str(_venv_executable(env.path, "sphinx-build"))
 
 
+def build_tool_executable(config: AppConfig, name: str) -> str:
+    if config.build.env.enabled:
+        return str(_venv_executable(config.build.env.path, name))
+    return name
+
+
 def _venv_executable(venv_path: Path, name: str) -> Path:
     if sys.platform == "win32":
         suffix = ".exe" if name != "python" else ".exe"

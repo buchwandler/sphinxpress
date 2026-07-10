@@ -14,7 +14,10 @@ Use `[build.env]` to enable a shared managed virtual environment for Sphinx and 
 
 ## Book settings
 
-`[book]`, `[epub]`, and `[pdf]` configure aggregate book metadata and output paths.
+`[book]`, `[epub]`, and `[pdf]` configure aggregate book metadata and output
+paths. `[pdf].builder` now defaults to `weasyprint`, which renders aggregate
+`singlehtml` output to PDF without LaTeX. Set `[pdf].builder = "latexpdf"` only
+when you explicitly want the legacy LaTeX-based Sphinx path.
 
 EPUB builds should provide non-empty `version` and `copyright` values:
 
@@ -28,6 +31,10 @@ copyright = "2026, Example Team"
 ```
 
 Use `suppress_warnings = ["ref.python"]` only as a temporary aggregate-book workaround for ambiguous Python cross-references that cannot yet be fixed in source docs.
+
+If `[build.env].enabled = true` and you want PDF output, include
+`weasyprint>=67` in `[build.env].packages` so the managed environment provides
+the `weasyprint` executable used by the PDF build.
 
 ## Projects
 

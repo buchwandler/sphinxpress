@@ -23,7 +23,7 @@ python -m pip install sphinxpress
 For local development and documentation builds:
 
 ```bash
-python -m pip install -e ".[dev,docs]"
+python -m pip install -e ".[dev,docs,pdf]"
 python -m pytest -q
 ```
 
@@ -56,7 +56,7 @@ copyright = "2026, Example Team"
 project_order = ["tool-a"]
 
 [pdf]
-builder = "latexpdf"
+builder = "weasyprint"
 output = "dist/example-documentation.pdf"
 
 [epub]
@@ -89,7 +89,11 @@ sphinxpress build-pdf --all
 sphinxpress validate
 ```
 
-`build-pdf` uses Sphinx's `latexpdf` builder and requires LaTeX system dependencies.
+`build-pdf` uses sphinxpress's internal WeasyPrint backend by default. It builds
+the aggregate docs as single HTML and renders that HTML to PDF, so LaTeX is not
+required for the default path. Install the optional `pdf` extra or include
+`weasyprint>=67` in the managed build environment. The legacy `latexpdf`
+builder remains available when `[pdf].builder = "latexpdf"` is set explicitly.
 
 ## Managed build environment
 
@@ -106,6 +110,7 @@ packages = [
   "sphinx>=7",
   "myst-parser",
   "sphinx-rtd-theme",
+  "weasyprint>=67",
   "-e", "../tool-a",
 ]
 ```
@@ -119,6 +124,6 @@ Package path arguments after `-e`, `--editable`, `-r`, `--requirement`, `-c`, an
 Build the project documentation with:
 
 ```bash
-python -m pip install -e ".[dev,docs]"
+python -m pip install -e ".[dev,docs,pdf]"
 python -m sphinx -b html docs docs/_build/html
 ```

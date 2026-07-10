@@ -27,7 +27,7 @@ copyright = "2026, Example Team"
 project_order = ["tool-a"]
 
 [pdf]
-builder = "latexpdf"
+builder = "weasyprint"
 output = "dist/example-documentation.pdf"
 
 [epub]
@@ -67,3 +67,6 @@ Build book outputs:
 sphinxpress build-epub --all
 sphinxpress build-pdf --all
 ```
+
+The default PDF path uses sphinxpress's internal WeasyPrint backend, so LaTeX
+is not required unless you explicitly set `[pdf].builder = "latexpdf"`.

@@ -15,11 +15,16 @@ packages = [
   "sphinx>=7",
   "myst-parser",
   "sphinx-rtd-theme",
+  "weasyprint>=67",
   "-e", "../tool-a",
 ]
 ```
 
 When enabled, `sphinxpress` prepares the environment once per command and uses the venv-local `sphinx-build` executable for `check`, `validate`, `build-site`, `build-epub`, and `build-pdf`.
+
+For PDF output, the same managed environment should also provide the
+`weasyprint` executable. Add `weasyprint>=67` to `[build.env].packages` when
+you use the default WeasyPrint PDF backend.
 
 Package path arguments after `-e`, `--editable`, `-r`, `--requirement`, `-c`, and `--constraint` are resolved relative to `sphinxpress.toml`.
 

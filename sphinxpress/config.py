@@ -103,7 +103,7 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         ),
     )
     pdf = OutputConfig(
-        builder=_string(pdf_data, "builder", default="latexpdf"),
+        builder=_string(pdf_data, "builder", default="weasyprint"),
         output=resolve_path(
             base_dir, _string(pdf_data, "output", default="dist/documentation.pdf")
         ),

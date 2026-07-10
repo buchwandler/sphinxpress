@@ -238,3 +238,7 @@ def validate_command(
     config = _load_from_context(ctx)
     run_validation(config, config.ordered_projects(), include_linkcheck=linkcheck)
     typer.echo("Validation passed.")
+
+
+if __name__ == "__main__":
+    app()
