@@ -253,6 +253,7 @@ def test_book_builder_builds_weasyprint_pdf_for_minimal_project(
 
     monkeypatch.setattr("sphinxpress.html_pdf.run_sphinx", fake_run_sphinx)
     monkeypatch.setattr("sphinxpress.html_pdf.run_weasyprint", fake_run_weasyprint)
+    monkeypatch.setattr("sphinxpress.html_pdf._tool_available", lambda command: True)
 
     output = build_book(config, config.projects, format_name="pdf")
 

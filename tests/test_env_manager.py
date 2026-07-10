@@ -165,6 +165,7 @@ def test_enabled_env_converts_editable_project_paths_to_pinned_releases(
 
 def test_editable_forms_preserve_project_extras(monkeypatch, tmp_path):
     project_root = copy_fixture(tmp_path)
+    docs_with_extras = str(project_root / "docs") + "[docs]"
     config_path = write_config(
         tmp_path,
         projects=[
@@ -180,7 +181,7 @@ def test_editable_forms_preserve_project_extras(monkeypatch, tmp_path):
         path = ".sphinxpress/venv"
         upgrade_pip = false
         packages = [
-          "--editable", "{project_root / 'docs'}[docs]",
+          "--editable", "{docs_with_extras}",
           "--editable={project_root}[pdf]",
         ]
         """,
@@ -213,8 +214,10 @@ def test_editable_forms_preserve_project_extras(monkeypatch, tmp_path):
         ]
     ]
 
+
 def test_unmapped_editable_build_env_package_is_rejected(monkeypatch, tmp_path):
     project_root = copy_fixture(tmp_path)
+    unmapped_project = tmp_path / "not-a-project"
     config_path = write_config(
         tmp_path,
         projects=[
@@ -227,7 +230,7 @@ def test_unmapped_editable_build_env_package_is_rejected(monkeypatch, tmp_path):
         extra=f"""
         [build.env]
         enabled = true
-        packages = ["-e", "{tmp_path / 'not-a-project'}"]
+        packages = ["-e", "{unmapped_project}"]
         """,
     )
     config = load_config(config_path)
