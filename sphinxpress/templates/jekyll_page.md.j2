@@ -3,10 +3,15 @@ layout: {{ layout }}
 title: {{ title | yaml_quote }}
 permalink: {{ permalink }}
 nav_tool: {{ nav_tool }}
+docs_project: {{ docs_project | yaml_quote }}
+docs_variant: {{ docs_variant | yaml_quote }}
+docs_ref: {{ docs_ref | yaml_quote }}
+docs_commit: {{ docs_commit | yaml_quote }}
 ---
 
 {{ generated_notice }}
 
+{{ liquid_raw_start }}
 <style data-sphinxpress-style="api">
 {{ site_css }}
 </style>
@@ -14,3 +19,4 @@ nav_tool: {{ nav_tool }}
 <div class="sphinxpress-doc">
 {{ body_html }}
 </div>
+{{ liquid_raw_end }}

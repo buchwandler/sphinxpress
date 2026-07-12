@@ -9,6 +9,7 @@ from sphinxpress.book_builder import build_book, create_aggregate_project
 from sphinxpress.config import load_config
 from sphinxpress.errors import SphinxBuildError, ValidationError
 from sphinxpress.html_pdf import build_weasyprint_pdf, patch_singlehtml_for_pdf
+from sphinxpress.models import ResolvedSiteTarget, SiteVariantConfig
 
 
 def test_book_builder_creates_aggregate_project(tmp_path, minimal_project_root):
@@ -180,6 +181,64 @@ def test_collect_extensions_rejects_non_literal_list(tmp_path, minimal_project_r
 
     with pytest.raises(ValidationError, match="literal extensions list"):
         create_aggregate_project(config, config.projects)
+
+
+def test_book_builder_uses_resolved_docs_variant(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    main_docs = tmp_path / "main-docs"
+    main_docs.mkdir()
+    (main_docs / "conf.py").write_text(
+        "project = 'booktx'\nextensions = []\nroot_doc = 'index'\n",
+        encoding="utf-8",
+    )
+    (main_docs / "index.rst").write_text(
+        "Main variant\n============\n", encoding="utf-8"
+    )
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    def fake_resolve_book_targets(config, projects):
+        project = projects[0]
+        return [
+            ResolvedSiteTarget(
+                project=project,
+                variant=SiteVariantConfig(
+                    name="main",
+                    label="Current main",
+                    source="git_ref",
+                    ref="main",
+                    url_segment="main",
+                ),
+                source_root=main_docs.parent,
+                docs_root=main_docs,
+                conf_dir=main_docs,
+                resolved_ref="main",
+                commit_sha="abc1234",
+                source_url="https://example.com/booktx/tree/main",
+                nav_key="booktx-main",
+                is_default=False,
+            )
+        ]
+
+    monkeypatch.setattr(
+        "sphinxpress.book_builder.resolve_book_targets", fake_resolve_book_targets
+    )
+
+    aggregate = create_aggregate_project(config, config.projects)
+
+    assert "Main variant" in (
+        aggregate.source_dir / "projects" / "booktx" / "index.rst"
+    ).read_text(encoding="utf-8")
 
 
 def test_book_builder_builds_epub_for_minimal_project(

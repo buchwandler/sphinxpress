@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Literal
 
@@ -10,6 +10,40 @@ from .errors import ConfigError
 
 ReleaseStrategy = Literal["manual", "git_tag", "pyproject"]
 BookFormat = Literal["pdf", "epub"]
+SiteVariantSource = Literal["working_tree", "release", "git_ref"]
+
+
+@dataclass(frozen=True)
+class SiteVariantConfig:
+    name: str
+    label: str
+    source: SiteVariantSource
+    ref: str | None = None
+    url_segment: str = ""
+
+
+@dataclass(frozen=True)
+class SiteVersioningConfig:
+    enabled: bool
+    default: str
+    variants: list[SiteVariantConfig]
+
+    def variant_map(self) -> dict[str, SiteVariantConfig]:
+        return {variant.name: variant for variant in self.variants}
+
+    def require_variant(self, name: str) -> SiteVariantConfig:
+        variant = self.variant_map().get(name)
+        if variant is None:
+            raise ConfigError(f"Unknown site variant '{name}'.")
+        return variant
+
+    def ordered_variants(
+        self, names: list[str] | None = None
+    ) -> list[SiteVariantConfig]:
+        if names is None:
+            return list(self.variants)
+        selected = set(names)
+        return [variant for variant in self.variants if variant.name in selected]
 
 
 @dataclass(frozen=True)
@@ -20,6 +54,8 @@ class SiteConfig:
     nav_data_dir: Path
     layout: str
     title: str
+    protect_liquid: bool
+    versioning: SiteVersioningConfig
 
 
 @dataclass(frozen=True)
@@ -52,6 +88,7 @@ class BookConfig:
     copyright: str
     suppress_warnings: list[str]
     project_order: list[str]
+    docs_variant: str
 
 
 @dataclass(frozen=True)
@@ -64,6 +101,7 @@ class OutputConfig:
 class ReleaseConfig:
     tag_prefix: str = "v"
     release_url_template: str = "{repo_url}/releases/tag/{tag}"
+    branch_url_template: str = "{repo_url}/tree/{ref}"
 
 
 @dataclass(frozen=True)
@@ -76,6 +114,8 @@ class ProjectConfig:
     repo_url: str
     release_strategy: ReleaseStrategy
     release_tag: str | None = None
+    site_variants: list[str] | None = None
+    version_refs: dict[str, str] = field(default_factory=dict)
 
     @property
     def conf_py(self) -> Path:
@@ -147,12 +187,31 @@ class ReleaseMetadata:
 
 
 @dataclass(frozen=True)
+class ResolvedSiteTarget:
+    project: ProjectConfig
+    variant: SiteVariantConfig
+    source_root: Path
+    docs_root: Path
+    conf_dir: Path
+    resolved_ref: str
+    commit_sha: str | None
+    source_url: str
+    nav_key: str
+    is_default: bool
+
+
+@dataclass(frozen=True)
 class PageRender:
     docname: str
     title: str
     body_html: str
     output_path: Path
     permalink: str
+    nav_tool: str
+    docs_project: str
+    docs_variant: str
+    docs_ref: str
+    docs_commit: str | None
 
 
 @dataclass(frozen=True)

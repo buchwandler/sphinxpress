@@ -19,6 +19,7 @@ from .config import (
 from .errors import SphinxpressError
 from .release import resolve_release_metadata, resolve_release_tag
 from .site_builder import build_site
+from .source_manager import resolve_site_targets
 from .validate import run_check, run_validation
 
 app = typer.Typer(
@@ -62,6 +63,33 @@ def _load_from_context(ctx: typer.Context):
     return load_config(ctx.obj["config_path"])
 
 
+def _select_variants(
+    config,
+    *,
+    variant: str | None,
+    variants: str | None,
+) -> list[str] | None:
+    if variant and variants:
+        raise typer.BadParameter("Choose at most one of --variant or --variants.")
+    if variant:
+        config.site.versioning.require_variant(variant)
+        return [variant]
+    if variants:
+        names = [item.strip() for item in variants.split(",") if item.strip()]
+        if not names:
+            raise typer.BadParameter("--variants requires at least one variant name.")
+        duplicates = {name for name in names if names.count(name) > 1}
+        if duplicates:
+            joined = ", ".join(sorted(duplicates))
+            raise typer.BadParameter(
+                f"Duplicate variant names in --variants: {joined}."
+            )
+        for name in names:
+            config.site.versioning.require_variant(name)
+        return names
+    return None
+
+
 @app.command("check")
 @_command
 def check_command(ctx: typer.Context) -> None:
@@ -74,6 +102,20 @@ def check_command(ctx: typer.Context) -> None:
 @_command
 def list_command(ctx: typer.Context) -> None:
     config = _load_from_context(ctx)
+    if config.site.versioning.enabled:
+        for target in resolve_site_targets(config, config.ordered_projects()):
+            typer.echo(
+                "\t".join(
+                    [
+                        target.project.name,
+                        target.variant.name,
+                        target.resolved_ref,
+                        target.commit_sha or "-",
+                        target.source_url,
+                    ]
+                )
+            )
+        return
     for project in config.ordered_projects():
         release = resolve_release_metadata(config, project)
         typer.echo(f"{project.name}\t{release.tag}\t{release.url}")
@@ -90,12 +132,19 @@ def build_site_command(
     projects: str | None = typer.Option(
         None, "--projects", help="Comma-separated project list."
     ),
+    variant: str | None = typer.Option(
+        None, "--variant", help="Build only one configured site variant."
+    ),
+    variants: str | None = typer.Option(
+        None, "--variants", help="Comma-separated site variant list."
+    ),
 ) -> None:
     config = _load_from_context(ctx)
     selected = select_projects(
         config, all_projects=all_projects, project=project, projects=projects
     )
-    build_site(config, selected)
+    selected_variants = _select_variants(config, variant=variant, variants=variants)
+    build_site(config, selected, variants=selected_variants)
     typer.echo("Site build completed.")
 
 
@@ -158,7 +207,10 @@ def build_book_command(
     selected = select_projects(
         config, all_projects=all_projects, project=project, projects=projects
     )
-    output = build_book(config, selected, format_name=format_name)
+    if format_name == "pdf":
+        output = build_book(config, selected, format_name="pdf")
+    else:
+        output = build_book(config, selected, format_name="epub")
     typer.echo(str(output))
 
 

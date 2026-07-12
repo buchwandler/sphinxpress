@@ -22,9 +22,13 @@ from .models import (
     OutputConfig,
     ProjectConfig,
     ReleaseConfig,
+    ReleaseStrategy,
     SiteConfig,
+    SiteVariantConfig,
+    SiteVariantSource,
+    SiteVersioningConfig,
 )
-from .paths import ensure_url_safe_name, resolve_path
+from .paths import ensure_url_safe_name, ensure_variant_segment, resolve_path
 
 
 def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig:
@@ -47,6 +51,7 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         raise ConfigError("Configuration must define at least one [[projects]] entry.")
 
     site_root = resolve_path(base_dir, _string(site_data, "root", default="."))
+    versioning = _site_versioning_from_raw(site_data)
     site = SiteConfig(
         root=site_root,
         base_url=_string(site_data, "base_url"),
@@ -54,6 +59,8 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         nav_data_dir=Path(_string(site_data, "nav_data_dir", default="_data/tool_nav")),
         layout=_string(site_data, "layout", default="tool-doc"),
         title=_string(site_data, "title"),
+        protect_liquid=_bool(site_data, "protect_liquid", default=True),
+        versioning=versioning,
     )
     env_data = build_data.get("env", {})
     if not isinstance(env_data, dict):
@@ -66,7 +73,7 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         )
     env = BuildEnvConfig(
         enabled=_bool(env_data, "enabled", default=False),
-        scope=env_scope,
+        scope="shared",
         python=_string(env_data, "python", default="python3"),
         path=resolve_path(
             base_dir, _string(env_data, "path", default=".sphinxpress/venv")
@@ -110,6 +117,11 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
             book_data.get("project_order"),
             default=[name for name in project_names if isinstance(name, str)],
         ),
+        docs_variant=_string(
+            book_data,
+            "docs_variant",
+            default=site.versioning.default,
+        ),
     )
     pdf = OutputConfig(
         builder=_string(pdf_data, "builder", default="weasyprint"),
@@ -130,8 +142,22 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
             "release_url_template",
             default="{repo_url}/releases/tag/{tag}",
         ),
+        branch_url_template=_string(
+            release_data,
+            "branch_url_template",
+            default="{repo_url}/tree/{ref}",
+        ),
     )
-    projects = [_project_from_raw(base_dir, item) for item in projects_data]
+    if book.docs_variant not in site.versioning.variant_map():
+        raise ConfigError(
+            f"Unknown book.docs_variant '{book.docs_variant}'. "
+            "Choose a configured site versioning variant."
+        )
+
+    projects = [
+        _project_from_raw(base_dir, item, versioning=site.versioning)
+        for item in projects_data
+    ]
     _validate_project_names(projects)
     return AppConfig(
         config_path=config_path,
@@ -164,6 +190,7 @@ def select_projects(
     if project is not None:
         return [config.require_project(project)]
 
+    assert projects is not None
     names = [item.strip() for item in projects.split(",") if item.strip()]
     if not names:
         raise SelectionError("--projects requires at least one project name.")
@@ -234,7 +261,12 @@ def _write_raw(config_path: Path, raw: dict[str, Any]) -> None:
     config_path.write_text(tomli_w.dumps(raw), encoding="utf-8")
 
 
-def _project_from_raw(base_dir: Path, raw: Any) -> ProjectConfig:
+def _project_from_raw(
+    base_dir: Path,
+    raw: Any,
+    *,
+    versioning: SiteVersioningConfig,
+) -> ProjectConfig:
     if not isinstance(raw, dict):
         raise ConfigError("Each [[projects]] entry must be a TOML table.")
     name = ensure_url_safe_name(_string(raw, "name"))
@@ -247,9 +279,43 @@ def _project_from_raw(base_dir: Path, raw: Any) -> ProjectConfig:
         ),
         root_doc=_string(raw, "root_doc", default="index"),
         repo_url=_string(raw, "repo_url"),
-        release_strategy=_string(raw, "release_strategy", default="manual"),
+        release_strategy=_release_strategy(raw, "release_strategy", default="manual"),
         release_tag=raw.get("release_tag"),
+        site_variants=(
+            None
+            if raw.get("site_variants") is None
+            else _string_list(raw.get("site_variants"), default=[])
+        ),
+        version_refs=_string_dict(raw.get("version_refs"), default={}),
     )
+    if project.site_variants:
+        unknown_variants = [
+            name
+            for name in project.site_variants
+            if name not in versioning.variant_map()
+        ]
+        if unknown_variants:
+            joined = ", ".join(sorted(unknown_variants))
+            raise ConfigError(
+                f"Project '{project.name}' references unknown site_variants: {joined}."
+            )
+    for variant_name, ref in project.version_refs.items():
+        variant = versioning.variant_map().get(variant_name)
+        if variant is None:
+            raise ConfigError(
+                f"Project '{project.name}' references unknown version_refs key "
+                f"'{variant_name}'."
+            )
+        if variant.source != "git_ref":
+            raise ConfigError(
+                f"Project '{project.name}' can override refs only for git_ref "
+                f"variants, but '{variant_name}' uses source '{variant.source}'."
+            )
+        if not ref.strip():
+            raise ConfigError(
+                f"Project '{project.name}' version_refs entry '{variant_name}' must "
+                "be a non-empty string."
+            )
     if not project.conf_py.exists():
         raise ConfigError(
             f"Project '{project.name}' is missing conf.py at {project.conf_py}."
@@ -299,6 +365,35 @@ def _string_list(value: Any, *, default: list[str]) -> list[str]:
     return list(value)
 
 
+def _string_dict(value: Any, *, default: dict[str, str]) -> dict[str, str]:
+    if value is None:
+        return dict(default)
+    if not isinstance(value, dict):
+        raise ConfigError("Configuration dictionary values must be TOML tables.")
+    if not all(
+        isinstance(key, str) and isinstance(item, str) for key, item in value.items()
+    ):
+        raise ConfigError(
+            "Configuration dictionary values must contain only string keys and values."
+        )
+    return {key: item for key, item in value.items()}
+
+
+def _release_strategy(
+    raw: dict[str, Any], key: str, default: str = "manual"
+) -> ReleaseStrategy:
+    value = _string(raw, key, default=default)
+    if value == "manual":
+        return "manual"
+    if value == "git_tag":
+        return "git_tag"
+    if value == "pyproject":
+        return "pyproject"
+    raise ConfigError(
+        f"Configuration field '{key}' must be one of: manual, git_tag, pyproject."
+    )
+
+
 def _resolve_package_paths(base_dir: Path, packages: list[str]) -> list[str]:
     resolved: list[str] = []
     path_flags = {"-e", "--editable", "-r", "--requirement", "-c", "--constraint"}
@@ -311,3 +406,111 @@ def _resolve_package_paths(base_dir: Path, packages: list[str]) -> list[str]:
         resolved.append(package)
         next_is_path = package in path_flags
     return resolved
+
+
+def _site_versioning_from_raw(site_data: dict[str, Any]) -> SiteVersioningConfig:
+    raw = site_data.get("versioning")
+    if raw is None:
+        return _legacy_site_versioning()
+    if not isinstance(raw, dict):
+        raise ConfigError("Configuration field 'site.versioning' must be a table.")
+    enabled = _bool(raw, "enabled", default=True)
+    if not enabled:
+        return _legacy_site_versioning()
+    variants_data = raw.get("variants")
+    if not isinstance(variants_data, list) or not variants_data:
+        raise ConfigError(
+            "Configuration field 'site.versioning.variants' must define at least "
+            "one variant when versioning is enabled."
+        )
+    default = _string(raw, "default")
+    variants = [_site_variant_from_raw(item) for item in variants_data]
+    names = [variant.name for variant in variants]
+    duplicates = {name for name in names if names.count(name) > 1}
+    if duplicates:
+        joined = ", ".join(sorted(duplicates))
+        raise ConfigError(f"Duplicate site variant names are not allowed: {joined}.")
+    if default not in names:
+        raise ConfigError(
+            f"Configuration field 'site.versioning.default' references unknown "
+            f"variant '{default}'."
+        )
+    seen_segments: set[str] = set()
+    for variant in variants:
+        is_default = variant.name == default
+        if is_default and variant.url_segment:
+            raise ConfigError(
+                f"Default variant '{variant.name}' must use an empty url_segment."
+            )
+        if not is_default and not variant.url_segment:
+            raise ConfigError(
+                f"Non-default variant '{variant.name}' must define a non-empty "
+                "url_segment."
+            )
+        if variant.url_segment:
+            if variant.url_segment in seen_segments:
+                raise ConfigError(
+                    f"Duplicate site version url_segment '{variant.url_segment}' is "
+                    "not allowed."
+                )
+            seen_segments.add(variant.url_segment)
+    return SiteVersioningConfig(enabled=True, default=default, variants=variants)
+
+
+def _site_variant_from_raw(raw: Any) -> SiteVariantConfig:
+    if not isinstance(raw, dict):
+        raise ConfigError(
+            "Each [[site.versioning.variants]] entry must be a TOML table."
+        )
+    name = ensure_url_safe_name(_string(raw, "name"))
+    source_value = _string(raw, "source")
+    if source_value == "working_tree":
+        source: SiteVariantSource = "working_tree"
+    elif source_value == "release":
+        source = "release"
+    elif source_value == "git_ref":
+        source = "git_ref"
+    else:
+        raise ConfigError(
+            f"Variant '{name}' uses unsupported source '{source_value}'. "
+            "Choose working_tree, release, or git_ref."
+        )
+    ref_value = raw.get("ref")
+    ref = None
+    if ref_value is not None:
+        if not isinstance(ref_value, str) or not ref_value.strip():
+            raise ConfigError(
+                f"Variant '{name}' field 'ref' must be a non-empty string."
+            )
+        ref = ref_value
+    if source == "git_ref" and ref is None:
+        raise ConfigError(f"Variant '{name}' with source 'git_ref' requires a ref.")
+    if source != "git_ref" and ref is not None:
+        raise ConfigError(
+            f"Variant '{name}' may define 'ref' only when source = 'git_ref'."
+        )
+    url_segment_value = raw.get("url_segment", "")
+    if not isinstance(url_segment_value, str):
+        raise ConfigError(f"Variant '{name}' field 'url_segment' must be a string.")
+    return SiteVariantConfig(
+        name=name,
+        label=_string(raw, "label", default=name),
+        source=source,
+        ref=ref,
+        url_segment=ensure_variant_segment(url_segment_value),
+    )
+
+
+def _legacy_site_versioning() -> SiteVersioningConfig:
+    return SiteVersioningConfig(
+        enabled=False,
+        default="legacy",
+        variants=[
+            SiteVariantConfig(
+                name="legacy",
+                label="Working tree",
+                source="working_tree",
+                url_segment="",
+            )
+        ],
+    )

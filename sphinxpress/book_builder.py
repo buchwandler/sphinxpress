@@ -11,9 +11,15 @@ from jinja2 import Environment, FileSystemLoader
 from .env_manager import build_tool_executable, prepare_build_environment
 from .errors import ValidationError
 from .html_pdf import build_weasyprint_pdf
-from .models import AggregateProject, AppConfig, BookFormat, ProjectConfig
+from .models import (
+    AggregateProject,
+    AppConfig,
+    BookFormat,
+    ProjectConfig,
+    ResolvedSiteTarget,
+)
 from .paths import copy_tree, ensure_within_root, reset_directory, write_text_if_changed
-from .release import find_project_root
+from .source_manager import python_paths_for_target, resolve_book_targets
 from .sphinx_runner import run_sphinx
 
 
@@ -69,6 +75,7 @@ def create_aggregate_project(
     config: AppConfig,
     projects: list[ProjectConfig],
 ) -> AggregateProject:
+    targets = resolve_book_targets(config, projects)
     root = config.build.work_dir / "build" / "book"
     if not config.build.keep_build_dir:
         reset_directory(root)
@@ -81,14 +88,18 @@ def create_aggregate_project(
     build_dir.mkdir(parents=True, exist_ok=True)
 
     project_docnames: list[str] = []
-    extensions = _collect_extensions(projects)
-    python_paths = _collect_python_paths(projects)
+    extensions = _collect_extensions(targets)
+    python_paths = _collect_python_paths(targets)
     projects_root = source_dir / "projects"
 
-    for project in projects:
-        destination = ensure_within_root(source_dir, projects_root / project.name)
-        copy_tree(project.docs_root, destination)
-        project_docnames.append(f"projects/{project.name}/{project.root_doc}")
+    for target in targets:
+        destination = ensure_within_root(
+            source_dir, projects_root / target.project.name
+        )
+        copy_tree(target.docs_root, destination)
+        project_docnames.append(
+            f"projects/{target.project.name}/{target.project.root_doc}"
+        )
 
     env = _template_environment()
     conf_content = env.get_template("aggregate_conf.py.j2").render(
@@ -116,27 +127,22 @@ def create_aggregate_project(
     )
 
 
-def _collect_python_paths(projects: list[ProjectConfig]) -> list[str]:
+def _collect_python_paths(targets: list[ResolvedSiteTarget]) -> list[str]:
     paths: list[str] = []
     seen: set[str] = set()
-    for project in projects:
-        project_root = find_project_root(project)
-        candidates = [project_root]
-        src_dir = project_root / "src"
-        if src_dir.exists():
-            candidates.append(src_dir)
-        for candidate in candidates:
-            resolved = str(candidate.resolve())
+    for target in targets:
+        for candidate in python_paths_for_target(target):
+            resolved = str(candidate)
             if resolved not in seen:
                 paths.append(resolved)
                 seen.add(resolved)
     return paths
 
 
-def _collect_extensions(projects: list[ProjectConfig]) -> list[str]:
+def _collect_extensions(targets: list[ResolvedSiteTarget]) -> list[str]:
     extensions: set[str] = set()
-    for project in projects:
-        extensions.update(_read_literal_extensions(project.conf_py))
+    for target in targets:
+        extensions.update(_read_literal_extensions(target.conf_dir / "conf.py"))
     return sorted(extensions)
 
 

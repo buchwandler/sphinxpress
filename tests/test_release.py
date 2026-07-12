@@ -5,7 +5,12 @@ import subprocess
 from conftest import copy_fixture, write_config
 
 from sphinxpress.config import load_config
-from sphinxpress.release import build_release_url, resolve_release_tag
+from sphinxpress.release import (
+    build_ref_url,
+    build_release_url,
+    resolve_git_commit,
+    resolve_release_tag,
+)
 
 
 def test_release_manual(tmp_path, minimal_project_root):
@@ -110,4 +115,61 @@ def test_release_url_template(tmp_path, minimal_project_root):
     assert (
         build_release_url(config, config.projects[0], "v0.4.0")
         == "https://example.com/booktx/archive/v0.4.0.zip"
+    )
+
+
+def test_resolve_git_commit_for_head(tmp_path):
+    project_root = copy_fixture(tmp_path)
+    subprocess.run(["git", "init"], cwd=project_root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.name", "Test"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "add", "."], cwd=project_root, check=True, capture_output=True
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "init"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+    )
+
+    commit = resolve_git_commit(project_root, "HEAD")
+
+    assert len(commit) == 40
+
+
+def test_build_ref_url_uses_branch_template(tmp_path, minimal_project_root):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config_path.write_text(
+        config_path.read_text(encoding="utf-8").replace(
+            'release_url_template = "{repo_url}/releases/tag/{tag}"\n',
+            'release_url_template = "{repo_url}/releases/tag/{tag}"\n'
+            'branch_url_template = "{repo_url}/blob/{ref}?kind={kind}"\n',
+        ),
+        encoding="utf-8",
+    )
+    config = load_config(config_path)
+
+    assert (
+        build_ref_url(config, config.projects[0], "main", kind="tree")
+        == "https://example.com/booktx/blob/main?kind=tree"
     )

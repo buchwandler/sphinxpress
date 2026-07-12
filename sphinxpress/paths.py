@@ -9,6 +9,7 @@ from pathlib import Path
 from .errors import ConfigError, PathTraversalError
 
 _URL_SAFE_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+_URL_SAFE_SEGMENT_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
 
 def ensure_url_safe_name(name: str) -> str:
@@ -18,6 +19,17 @@ def ensure_url_safe_name(name: str) -> str:
             "and dashes, starting with a letter or number."
         )
     return name
+
+
+def ensure_variant_segment(segment: str) -> str:
+    if not segment:
+        return ""
+    if not _URL_SAFE_SEGMENT_RE.fullmatch(segment):
+        raise ConfigError(
+            "Variant url_segment values must be empty or use lowercase letters, "
+            "numbers, and dashes without path separators."
+        )
+    return segment
 
 
 def resolve_path(base_dir: Path, value: str | Path) -> Path:
@@ -49,17 +61,43 @@ def docname_to_output_path(docname: str) -> Path:
     return relative.with_suffix(".md")
 
 
-def permalink_for(tools_dir: Path, project_name: str, docname: str) -> str:
+def output_path_for(
+    tools_dir: Path,
+    project_name: str,
+    docname: str,
+    *,
+    variant_segment: str = "",
+) -> Path:
+    parts = [tools_dir, Path(project_name)]
+    if variant_segment:
+        parts.append(Path(variant_segment))
+    return Path(*parts) / docname_to_output_path(docname)
+
+
+def permalink_for(
+    tools_dir: Path,
+    project_name: str,
+    docname: str,
+    *,
+    variant_segment: str = "",
+) -> str:
     parts = list(Path(docname).parts)
     if ".." in parts or not parts:
         raise PathTraversalError(f"Unsafe Sphinx docname '{docname}'.")
     base_parts = [
         segment.strip("/") for segment in tools_dir.parts if segment not in (".", "")
     ]
-    permalink_parts = [*base_parts, project_name, *parts]
+    permalink_parts = [*base_parts, project_name]
+    if variant_segment:
+        permalink_parts.append(variant_segment)
+    permalink_parts.extend(parts)
     if parts[-1] == "index":
         permalink_parts = permalink_parts[:-1]
     return "/" + "/".join(permalink_parts) + "/"
+
+
+def nav_key_for(project_name: str, variant_name: str, *, is_default: bool) -> str:
+    return project_name if is_default else f"{project_name}-{variant_name}"
 
 
 def generated_notice(comment_prefix: str = "<!--", comment_suffix: str = "-->") -> str:

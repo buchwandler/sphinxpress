@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+from collections.abc import Mapping
 from pathlib import Path
 
 from .command_log import run_logged_command
@@ -67,6 +69,8 @@ def run_sphinx(
     parallel: str | None = None,
     log_dir: Path | None = None,
     log_stem: str | None = None,
+    python_paths: list[Path] | None = None,
+    environment: Mapping[str, str] | None = None,
 ) -> None:
     command = build_sphinx_command(
         sphinx_build=sphinx_build,
@@ -85,6 +89,7 @@ def run_sphinx(
         command,
         log_dir=log_dir,
         log_stem=log_stem or f"sphinx-{builder}",
+        env=_build_environment(python_paths=python_paths, environment=environment),
     )
     result = logged.result
     if result.returncode != 0:
@@ -96,3 +101,22 @@ def run_sphinx(
             f"Sphinx builder '{builder}' failed with exit code {result.returncode}.\n"
             f"Command: {' '.join(command)}{log_hint}\n{detail}".rstrip()
         )
+
+
+def _build_environment(
+    *,
+    python_paths: list[Path] | None,
+    environment: Mapping[str, str] | None,
+) -> dict[str, str] | None:
+    if not python_paths and not environment:
+        return None
+    env = dict(os.environ)
+    if environment:
+        env.update(environment)
+    if python_paths:
+        existing = env.get("PYTHONPATH", "")
+        new_paths = [str(path) for path in python_paths]
+        env["PYTHONPATH"] = os.pathsep.join(
+            [*new_paths, *([existing] if existing else [])]
+        )
+    return env

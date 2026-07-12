@@ -13,8 +13,10 @@ It stays Sphinx-first. Each source project keeps its own `conf.py` and documenta
 ## Features
 
 - Build Jekyll pages from Sphinx JSON output.
+- Build one logical project as both latest release docs and committed `main` docs.
 - Preserve readable Sphinx autodoc/API presentation in generated Jekyll pages with scoped, self-contained styling.
 - Write per-project navigation data for site layouts.
+- Protect generated pages from Jekyll 3 Liquid parsing without an external wrapper step.
 - Build aggregate EPUB and PDF projects from selected Sphinx docs projects.
 - Resolve release metadata from manual tags, git tags, or project metadata.
 - Optionally create a shared managed virtual environment for Sphinx and documentation dependencies.
@@ -44,6 +46,24 @@ tools_dir = "tools"
 nav_data_dir = "_data/tool_nav"
 layout = "tool-doc"
 title = "Example Docs"
+protect_liquid = true
+
+[site.versioning]
+enabled = true
+default = "release"
+
+[[site.versioning.variants]]
+name = "release"
+label = "Latest release"
+source = "release"
+url_segment = ""
+
+[[site.versioning.variants]]
+name = "main"
+label = "Current main"
+source = "git_ref"
+ref = "main"
+url_segment = "main"
 
 [build]
 work_dir = ".sphinxpress"
@@ -59,6 +79,7 @@ language = "en"
 version = "0.1.0"
 copyright = "2026, Example Team"
 project_order = ["tool-a"]
+docs_variant = "release"
 
 [pdf]
 builder = "weasyprint"
@@ -81,6 +102,8 @@ root_doc = "index"
 repo_url = "https://github.com/example/tool-a"
 release_strategy = "manual"
 release_tag = "v0.1.0"
+site_variants = ["release", "main"]
+version_refs = { main = "main" }
 ```
 
 ## Commands
@@ -89,10 +112,20 @@ release_tag = "v0.1.0"
 sphinxpress check
 sphinxpress list
 sphinxpress build-site --all
+sphinxpress build-site --all --variant release
 sphinxpress build-epub --all
 sphinxpress build-pdf --all
 sphinxpress validate
 ```
+
+With the versioning block above, `build-site --all` writes:
+
+- `/tools/tool-a/` for the resolved release target
+- `/tools/tool-a/main/` for the resolved `main` target
+- `_data/tool_nav/tool-a.yml` and `_data/tool_nav/tool-a-main.yml` with a version switcher payload
+
+`sphinxpress` does not fetch refs or tags automatically. If a configured release tag or
+Git ref is missing locally, fetch it before building.
 
 `build-pdf` uses sphinxpress's internal WeasyPrint backend by default. It builds
 the aggregate docs as single HTML and renders that HTML to PDF, so LaTeX is not
@@ -135,6 +168,11 @@ packages = [
 For v0.1, only `scope = "shared"` is supported. `scope = "project"` is reserved for a future release and is rejected with a configuration error.
 
 Use exact package requirements for project packages, for example `tool-a==0.1.0`. Legacy editable entries that match a configured project path are converted to `project-name==release-version` using the project release tag with `[release].tag_prefix` stripped. Unmatched editable paths are rejected. Package path arguments after `-r`, `--requirement`, `-c`, and `--constraint` are resolved relative to `sphinxpress.toml`.
+
+When site versioning is enabled, the shared environment can keep exact released
+package pins while `main` docs still import the resolved checkout. `sphinxpress`
+prepends the resolved source root and its `src/` directory to `PYTHONPATH` for
+each Sphinx subprocess instead of using editable installs.
 
 ## Documentation
 

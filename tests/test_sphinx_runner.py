@@ -102,3 +102,78 @@ def test_run_sphinx_writes_success_log(tmp_path, minimal_project_root):
     latest = log_dir / "latest-site-booktx-json.log"
     assert latest.exists()
     assert "returncode: 0" in latest.read_text(encoding="utf-8")
+
+
+def test_run_sphinx_passes_target_environment(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    captured = {}
+
+    class _Result:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake_run_logged_command(command, **kwargs):
+        captured["command"] = command
+        captured["env"] = kwargs["env"]
+        return LoggedResult(result=_Result(), log_path=None)
+
+    monkeypatch.setattr(
+        "sphinxpress.sphinx_runner.run_logged_command", fake_run_logged_command
+    )
+
+    run_sphinx(
+        builder="json",
+        conf_dir=minimal_project_root / "docs",
+        src_dir=minimal_project_root / "docs",
+        out_dir=tmp_path / "out",
+        doctree_dir=tmp_path / "doctrees",
+        fail_on_warning=True,
+        python_paths=[Path("/workspace/booktx"), Path("/workspace/booktx/src")],
+        environment={
+            "SPHINXPRESS_DOCS_PROJECT": "booktx",
+            "SPHINXPRESS_DOCS_VARIANT": "main",
+            "SPHINXPRESS_DOCS_REF": "main",
+            "SPHINXPRESS_DOCS_COMMIT": "abc1234",
+        },
+    )
+
+    env = captured["env"]
+    assert env["SPHINXPRESS_DOCS_PROJECT"] == "booktx"
+    assert env["SPHINXPRESS_DOCS_VARIANT"] == "main"
+    assert env["SPHINXPRESS_DOCS_REF"] == "main"
+    assert env["SPHINXPRESS_DOCS_COMMIT"] == "abc1234"
+    assert env["PYTHONPATH"].startswith("/workspace/booktx:/workspace/booktx/src")
+
+
+def test_run_sphinx_logs_safe_environment_entries(tmp_path, minimal_project_root):
+    out_dir = tmp_path / "out"
+    doctree_dir = tmp_path / "doctrees"
+    log_dir = tmp_path / "logs"
+
+    run_sphinx(
+        builder="json",
+        conf_dir=minimal_project_root / "docs",
+        src_dir=minimal_project_root / "docs",
+        out_dir=out_dir,
+        doctree_dir=doctree_dir,
+        fail_on_warning=True,
+        log_dir=log_dir,
+        log_stem="site-booktx-main-json",
+        python_paths=[Path("/workspace/booktx"), Path("/workspace/booktx/src")],
+        environment={
+            "SPHINXPRESS_DOCS_PROJECT": "booktx",
+            "SPHINXPRESS_DOCS_VARIANT": "main",
+            "SPHINXPRESS_DOCS_REF": "main",
+            "SPHINXPRESS_DOCS_COMMIT": "abc1234",
+        },
+    )
+
+    latest = log_dir / "latest-site-booktx-main-json.log"
+    content = latest.read_text(encoding="utf-8")
+    assert "SPHINXPRESS_DOCS_PROJECT=booktx" in content
+    assert "SPHINXPRESS_DOCS_VARIANT=main" in content
+    assert "SPHINXPRESS_DOCS_REF=main" in content
+    assert "SPHINXPRESS_DOCS_COMMIT=abc1234" in content
+    assert "PYTHONPATH=/workspace/booktx:/workspace/booktx/src" in content

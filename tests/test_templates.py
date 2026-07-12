@@ -61,12 +61,20 @@ def test_jekyll_page_template_renders_front_matter():
         title="Tool A",
         permalink="/tools/tool-a/",
         nav_tool="tool-a",
+        docs_project="tool-a",
+        docs_variant="release",
+        docs_ref="v0.1.0",
+        docs_commit="1234567",
         generated_notice="<!-- generated -->",
+        liquid_raw_start="{% raw %}",
+        liquid_raw_end="{% endraw %}",
         site_css=site_api_css(),
         body_html="<p>Hello</p>",
     )
     assert rendered.startswith("---\n")
     assert "nav_tool: tool-a" in rendered
+    assert 'docs_variant: "release"' in rendered
+    assert "{% raw %}" in rendered
     assert '<style data-sphinxpress-style="api">' in rendered
     assert '<div class="sphinxpress-doc">' in rendered
     assert "<p>Hello</p>" in rendered

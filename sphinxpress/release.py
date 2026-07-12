@@ -85,6 +85,45 @@ def build_release_url(config: AppConfig, project: ProjectConfig, tag: str) -> st
     )
 
 
+def build_ref_url(
+    config: AppConfig,
+    project: ProjectConfig,
+    ref: str,
+    *,
+    kind: str = "tree",
+) -> str:
+    return config.release.branch_url_template.format(
+        repo_url=project.repo_url,
+        ref=ref,
+        kind=kind,
+    )
+
+
+def resolve_git_commit(project_root: Path, ref: str) -> str:
+    result = subprocess.run(
+        [
+            "git",
+            "--no-pager",
+            "-C",
+            str(project_root),
+            "rev-parse",
+            "--verify",
+            f"{ref}^{{commit}}",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        detail = (
+            result.stderr.strip() or result.stdout.strip() or "git rev-parse failed"
+        )
+        raise ReleaseResolutionError(
+            f"Could not resolve git ref '{ref}' in {project_root}: {detail}"
+        )
+    return result.stdout.strip()
+
+
 def find_project_root(project: ProjectConfig) -> Path:
     for root in (project.docs_root, project.conf_dir):
         for candidate in [root, *root.parents]:

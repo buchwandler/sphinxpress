@@ -8,6 +8,14 @@ Loads configuration, prepares the managed environment if enabled, verifies `sphi
 
 Lists configured projects and resolved release metadata.
 
+When site versioning is enabled, `list` expands each logical project into one
+line per resolved variant:
+
+```text
+booktx  release  v0.4.1  <commit>  <release-url>
+booktx  main     main    <commit>  <branch-url>
+```
+
 ## `sphinxpress build-site`
 
 Builds Jekyll pages and navigation data.
@@ -16,7 +24,12 @@ Builds Jekyll pages and navigation data.
 sphinxpress build-site --all
 sphinxpress build-site --project tool-a
 sphinxpress build-site --projects tool-a,tool-b
+sphinxpress build-site --all --variant release
+sphinxpress build-site --projects tool-a,tool-b --variants release,main
 ```
+
+Without variant filters, `build-site --all` builds every configured variant for
+every selected project.
 
 ## `sphinxpress build-epub`
 
@@ -58,6 +71,9 @@ For `--format pdf`, the default backend matches `build-pdf`: aggregate
 `singlehtml` plus WeasyPrint, with explicit `latexpdf` still available through
 configuration.
 
+When site versioning is enabled, `build-book` uses `[book].docs_variant` and
+does not aggregate multiple variants into the same EPUB or PDF.
+
 ## `sphinxpress update-release`
 
 Updates one project's stored `release_tag`.
@@ -88,6 +104,11 @@ sphinxpress add-project \
 ## `sphinxpress validate`
 
 Runs checks, validates generated Jekyll output, and verifies aggregate book project creation.
+
+With site versioning enabled, `validate` resolves every configured site target,
+checks each version-switch URL in generated nav payloads, verifies nav-key
+uniqueness, confirms Liquid raw wrappers are balanced, and verifies the
+generated-output manifest exists.
 
 ```bash
 sphinxpress validate
