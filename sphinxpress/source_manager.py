@@ -28,7 +28,14 @@ def resolve_site_targets(
     seen_nav_keys: set[str] = set()
     targets: list[ResolvedSiteTarget] = []
     for project in projects:
-        for variant in _variants_for_project(config, project, selected_variants):
+        project_variants = _variants_for_project(config, project, selected_variants)
+        if any(variant.source != "working_tree" for variant in project_variants):
+            _prune_stale_worktrees(
+                config,
+                project_root=find_project_root(project).resolve(),
+                project_name=project.name,
+            )
+        for variant in project_variants:
             target = _resolve_target(config, project, variant)
             if target.nav_key in seen_nav_keys:
                 raise ConfigError(
@@ -263,6 +270,36 @@ def _run_git_logged(
         log_hint = f"\nLog: {logged.log_path}" if logged.log_path else ""
         raise ReleaseResolutionError(f"{detail}{log_hint}")
 
+
+def _prune_stale_worktrees(
+    config: AppConfig,
+    *,
+    project_root: Path,
+    project_name: str,
+) -> None:
+    """Drop prunable worktree registrations for a project repo.
+
+    A previous build may leave a per-variant worktree directory behind via an
+    external ``rm -rf .sphinxpress``. The upstream ``.git/worktrees/<variant>/``
+    registration survives and marks the entry as ``(detached HEAD) prunable``,
+    which makes a subsequent ``git worktree add --detach`` for the same path fail
+    with "is a missing but already registered worktree". Running ``git worktree
+    prune`` clears the stale entries so the next ``add`` can succeed.
+    """
+    _run_git_logged(
+        config,
+        project_root=project_root,
+        project_name=project_name,
+        variant_name="prune",
+        command=[
+            "git",
+            "--no-pager",
+            "-C",
+            str(project_root),
+            "worktree",
+            "prune",
+        ],
+    )
 
 def _is_registered_worktree(project_root: Path, target_dir: Path) -> bool:
     return target_dir.resolve() in _registered_worktrees(project_root)

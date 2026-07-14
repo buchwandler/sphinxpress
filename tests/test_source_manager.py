@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import textwrap
 from pathlib import Path
@@ -291,3 +292,41 @@ def test_source_manager_rejects_missing_release_tag_without_fallback(tmp_path):
         match="variant 'release'.*project 'booktx'",
     ):
         resolve_site_targets(config, config.projects)
+
+
+def test_resolve_targets_with_prunable_worktree(tmp_path):
+    """Simulate the buchwandler ``rm -rf .sphinxpress`` scenario.
+
+    After a previous build materialised the per-variant worktrees, an external
+    ``rm -rf .sphinxpress`` removes the worktree directories but leaves the
+    upstream ``.git/worktrees/<variant>/`` registrations as ``(detached HEAD)
+    prunable``. The next ``resolve_site_targets`` call must self-heal by running
+    ``git worktree prune`` and re-creating the worktrees without raising.
+    """
+    repo = _create_versioned_repo(tmp_path)
+    config = load_config(_write_versioned_config(tmp_path, repo / "docs"))
+
+    first = resolve_site_targets(config, config.projects)
+    assert {target.variant.name for target in first} == {"release", "main"}
+
+    sources_root = config.build.work_dir / "sources" / "booktx"
+    assert sources_root.exists()
+    shutil.rmtree(sources_root)
+
+    worktree_listing = _git(repo, "worktree", "list", "--porcelain")
+    assert worktree_listing.count("prunable") == 2
+
+    second = resolve_site_targets(config, config.projects)
+    second_by_name = {target.variant.name: target for target in second}
+    assert set(second_by_name) == {"release", "main"}
+    assert second_by_name["release"].source_root.exists()
+    assert second_by_name["main"].source_root.exists()
+    assert "Release docs" in (
+        second_by_name["release"].docs_root / "index.rst"
+    ).read_text(encoding="utf-8")
+    assert "Main docs" in (
+        second_by_name["main"].docs_root / "index.rst"
+    ).read_text(encoding="utf-8")
+
+    final_listing = _git(repo, "worktree", "list", "--porcelain")
+    assert "prunable" not in final_listing
