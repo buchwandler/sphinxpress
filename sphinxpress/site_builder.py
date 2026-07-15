@@ -27,6 +27,7 @@ from .paths import (
     reset_directory,
 )
 from .release import resolve_release_metadata
+from .search_index import write_search_index
 from .source_manager import python_paths_for_target, resolve_site_targets
 from .sphinx_runner import run_sphinx
 
@@ -86,6 +87,7 @@ def build_site(
                 docs_variant=page.docs_variant,
                 docs_ref=page.docs_ref,
                 docs_commit=page.docs_commit,
+                search_enabled=config.site.search.enabled,
             )
             outputs.append(written)
             written_paths.append(written)
@@ -103,6 +105,14 @@ def build_site(
         )
         outputs.append(nav_path)
         written_paths.append(nav_path)
+        search_index_path = write_search_index(
+            site=config.site,
+            target=target,
+            pages=rendered_pages,
+        )
+        if search_index_path is not None:
+            outputs.append(config.site.root / search_index_path)
+            written_paths.append(config.site.root / search_index_path)
         next_target_paths[_target_key(target)] = [
             path.relative_to(config.site.root).as_posix() for path in written_paths
         ]
@@ -382,6 +392,14 @@ def _cleanup_stale_outputs(
 
 
 def _is_generated_output(path: Path) -> bool:
+    if path.suffix == ".json":
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return False
+        return (
+            isinstance(payload, dict) and payload.get("_generated_by") == "sphinxpress"
+        )
     return _GENERATED_MARKER in path.read_text(encoding="utf-8")
 
 

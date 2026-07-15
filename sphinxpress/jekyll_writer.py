@@ -47,6 +47,20 @@ def site_api_css() -> str:
     return (template_dir / "site_api.css").read_text(encoding="utf-8").strip()
 
 
+@lru_cache(maxsize=1)
+def site_search_css() -> str:
+    """Return the packaged sphinxpress search stylesheet for generated pages."""
+    template_dir = Path(__file__).with_name("templates")
+    return (template_dir / "site_search.css").read_text(encoding="utf-8").strip()
+
+
+@lru_cache(maxsize=1)
+def tool_search_js() -> str:
+    """Return the packaged sphinxpress search script for generated pages."""
+    template_dir = Path(__file__).with_name("templates")
+    return (template_dir / "tool_search.js").read_text(encoding="utf-8")
+
+
 def write_jekyll_page(
     *,
     site: SiteConfig,
@@ -59,6 +73,7 @@ def write_jekyll_page(
     docs_variant: str,
     docs_ref: str,
     docs_commit: str | None,
+    search_enabled: bool = True,
 ) -> Path:
     destination = ensure_within_root(site.root, site.root / relative_path)
     sanitized_body = neutralize_liquid_terminators(
@@ -80,6 +95,9 @@ def write_jekyll_page(
             liquid_raw_start="{% raw %}" if site.protect_liquid else "",
             liquid_raw_end="{% endraw %}" if site.protect_liquid else "",
             site_css=site_api_css(),
+            site_search_css=site_search_css() if search_enabled else "",
+            site_search_js=tool_search_js() if search_enabled else "",
+            search_enabled=bool(search_enabled),
             body_html=sanitized_body,
         )
     )

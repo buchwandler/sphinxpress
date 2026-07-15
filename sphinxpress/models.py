@@ -47,6 +47,23 @@ class SiteVersioningConfig:
 
 
 @dataclass(frozen=True)
+class SiteSearchConfig:
+    enabled: bool = True
+    max_section_chars: int = 800
+    max_sections: int = 50
+
+    def __post_init__(self) -> None:
+        if self.max_section_chars <= 0:
+            raise ConfigError(
+                "Configuration field 'site.search.max_section_chars' must be positive."
+            )
+        if self.max_sections <= 0:
+            raise ConfigError(
+                "Configuration field 'site.search.max_sections' must be positive."
+            )
+
+
+@dataclass(frozen=True)
 class SiteConfig:
     root: Path
     base_url: str
@@ -57,6 +74,7 @@ class SiteConfig:
     protect_liquid: bool
     versioning: SiteVersioningConfig
     overview_layout: str = "default"
+    search: SiteSearchConfig = field(default_factory=SiteSearchConfig)
 
 
 @dataclass(frozen=True)

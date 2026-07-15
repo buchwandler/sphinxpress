@@ -7,6 +7,7 @@ docs_project: {{ docs_project | yaml_quote }}
 docs_variant: {{ docs_variant | yaml_quote }}
 docs_ref: {{ docs_ref | yaml_quote }}
 docs_commit: {{ docs_commit | yaml_quote }}
+search_enabled: {{ "true" if search_enabled else "false" }}
 ---
 
 {{ generated_notice }}
@@ -15,8 +16,18 @@ docs_commit: {{ docs_commit | yaml_quote }}
 <style data-sphinxpress-style="api">
 {{ site_css }}
 </style>
+{% if search_enabled %}
+<style data-sphinxpress-style="search">
+{{ site_search_css }}
+</style>
+{% endif %}
 
 <div class="sphinxpress-doc">
 {{ body_html }}
 </div>
+{% if search_enabled %}
+<script data-sphinxpress-script="search" defer>
+{{ site_search_js }}
+</script>
+{% endif %}
 {{ liquid_raw_end }}

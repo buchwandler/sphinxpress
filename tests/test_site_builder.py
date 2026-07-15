@@ -149,6 +149,22 @@ def test_site_builder_writes_jekyll_pages(monkeypatch, tmp_path, minimal_project
     assert index_path in outputs
     assert index_path.exists()
     assert quickstart_path.exists()
+    search_index_path = tmp_path / "search" / "booktx.json"
+    assert search_index_path in outputs
+    assert search_index_path.exists()
+    payload = json.loads(search_index_path.read_text(encoding="utf-8"))
+    assert payload["tool"] == "booktx"
+    assert {entry["url"] for entry in payload["entries"]} == {
+        "/tools/booktx/",
+        "/tools/booktx/quickstart/",
+    }
+    manifest = json.loads(
+        (tmp_path / ".sphinxpress" / "site-output-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    target_key = next(iter(manifest["targets"]))
+    assert "search/booktx.json" in manifest["targets"][target_key]
 
 
 def test_site_builder_writes_variant_aware_pages_and_nav(
@@ -370,3 +386,98 @@ def test_site_builder_orders_nav_by_root_toctree(
         "quickstart",
         "project-layout",
     ]
+
+
+def test_site_builder_skips_search_index_when_disabled(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+        extra="""
+        [site.search]
+        enabled = false
+        """,
+    )
+    config = load_config(config_path)
+
+    def fake_run_sphinx(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "index.fjson").write_text(
+            json.dumps({"title": "booktx", "body": "<p>Index</p>"}),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr("sphinxpress.site_builder.run_sphinx", fake_run_sphinx)
+
+    build_site(config, config.projects)
+
+    assert not (tmp_path / "search").exists()
+    manifest = json.loads(
+        (tmp_path / ".sphinxpress" / "site-output-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    target_key = next(iter(manifest["targets"]))
+    assert "search/booktx.json" not in manifest["targets"][target_key]
+
+
+def test_site_builder_search_index_cleaned_up_when_nav_keys_disappear(
+    monkeypatch, tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+    config = load_config(config_path)
+
+    def fake_run_sphinx(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "index.fjson").write_text(
+            json.dumps({"title": "booktx", "body": "<p>Index</p>"}),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr("sphinxpress.site_builder.run_sphinx", fake_run_sphinx)
+    build_site(config, config.projects)
+    stale_path = tmp_path / "search" / "stale.json"
+    stale_path.parent.mkdir(parents=True, exist_ok=True)
+    stale_path.write_text(
+        json.dumps(
+            {"_generated_by": "sphinxpress", "tool": "stale", "entries": []},
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    def fake_run_sphinx_no_search(**kwargs):
+        out_dir = kwargs["out_dir"]
+        out_dir.mkdir(parents=True, exist_ok=True)
+        (out_dir / "index.fjson").write_text(
+            json.dumps({"title": "booktx", "body": "<p>Index</p>"}),
+            encoding="utf-8",
+        )
+        # simulate a search index that no longer exists
+        pass
+
+    monkeypatch.setattr(
+        "sphinxpress.site_builder.run_sphinx", fake_run_sphinx_no_search
+    )
+    build_site(config, config.projects)
+    # stale file should be left in place because it is not in the previous manifest
+    assert stale_path.exists()

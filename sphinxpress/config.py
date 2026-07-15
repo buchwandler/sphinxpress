@@ -24,6 +24,7 @@ from .models import (
     ReleaseConfig,
     ReleaseStrategy,
     SiteConfig,
+    SiteSearchConfig,
     SiteVariantConfig,
     SiteVariantSource,
     SiteVersioningConfig,
@@ -62,6 +63,7 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         protect_liquid=_bool(site_data, "protect_liquid", default=True),
         versioning=versioning,
         overview_layout=_string(site_data, "overview_layout", default="default"),
+        search=_site_search_from_raw(site_data),
     )
     env_data = build_data.get("env", {})
     if not isinstance(env_data, dict):
@@ -359,6 +361,13 @@ def _bool(raw: dict[str, Any], key: str, default: bool) -> bool:
     return value
 
 
+def _int(raw: dict[str, Any], key: str, default: int) -> int:
+    value = raw.get(key, default)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigError(f"Configuration field '{key}' must be an integer.")
+    return value
+
+
 def _optional_string(raw: dict[str, Any], key: str, default: str = "") -> str:
     value = raw.get(key, default)
     if value is None:
@@ -466,6 +475,19 @@ def _site_versioning_from_raw(site_data: dict[str, Any]) -> SiteVersioningConfig
                 )
             seen_segments.add(variant.url_segment)
     return SiteVersioningConfig(enabled=True, default=default, variants=variants)
+
+
+def _site_search_from_raw(site_data: dict[str, Any]) -> SiteSearchConfig:
+    raw = site_data.get("search")
+    if raw is None:
+        return SiteSearchConfig()
+    if not isinstance(raw, dict):
+        raise ConfigError("Configuration field 'site.search' must be a table.")
+    return SiteSearchConfig(
+        enabled=_bool(raw, "enabled", default=True),
+        max_section_chars=_int(raw, "max_section_chars", default=800),
+        max_sections=_int(raw, "max_sections", default=50),
+    )
 
 
 def _site_variant_from_raw(raw: Any) -> SiteVariantConfig:

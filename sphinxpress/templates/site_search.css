@@ -1,0 +1,137 @@
+.sphinxpress-doc {
+  --sp-search-border: #d1d5db;
+  --sp-search-surface: #ffffff;
+  --sp-search-text: inherit;
+  --sp-search-accent: #1268a8;
+  --sp-search-mark: #fff3a3;
+  --sp-search-mark-text: #111827;
+}
+
+.tool-search {
+  margin: 0 0 0.85rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tool-search-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #4b5563;
+}
+
+.tool-search-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  color: var(--sp-search-text);
+  background: var(--sp-search-surface);
+  border: 1px solid var(--sp-search-border);
+  border-radius: 4px;
+  outline: none;
+}
+
+.tool-search-input:focus {
+  border-color: var(--sp-search-accent);
+  box-shadow: 0 0 0 2px rgba(18, 104, 168, 0.18);
+}
+
+.tool-search-results {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.tool-search-results[hidden] {
+  display: none;
+}
+
+.tool-search-result {
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--sp-search-border);
+}
+
+.tool-search-result:first-child {
+  border-top: 0;
+}
+
+.tool-search-result a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.tool-search-result-title {
+  font-weight: 600;
+  color: var(--sp-search-accent);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.tool-search-result-snippet {
+  margin: 0.2rem 0 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: inherit;
+  word-break: break-word;
+}
+
+.tool-search-result mark {
+  background: var(--sp-search-mark);
+  color: var(--sp-search-mark-text);
+  padding: 0 0.1em;
+  border-radius: 2px;
+}
+
+.tool-search-empty {
+  margin: 0;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.tool-nav-list {
+  margin: 0;
+}
+
+.tool-nav-list[hidden] {
+  display: none;
+}
+
+@media (max-width: 48rem) {
+  .tool-search-results {
+    max-height: 50vh;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .sphinxpress-doc {
+    --sp-search-border: #475569;
+    --sp-search-surface: #111827;
+    --sp-search-text: #f3f4f6;
+    --sp-search-accent: #7dc8f5;
+    --sp-search-mark: #5b4a14;
+    --sp-search-mark-text: #f3f4f6;
+  }
+
+  .tool-search-label {
+    color: #cbd5e1;
+  }
+
+  .tool-search-empty {
+    color: #9ca3af;
+  }
+}
+
+@media print {
+  .tool-search {
+    display: none;
+  }
+}

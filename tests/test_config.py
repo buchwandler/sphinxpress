@@ -680,3 +680,89 @@ def test_config_rejects_unknown_version_ref_override(tmp_path, minimal_project_r
 
     with pytest.raises(ConfigError, match="override refs only for git_ref variants"):
         load_config(config_path)
+
+
+def test_config_site_search_defaults_to_enabled(tmp_path, minimal_project_root):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+    )
+
+    config = load_config(config_path)
+
+    assert config.site.search.enabled is True
+    assert config.site.search.max_section_chars == 800
+    assert config.site.search.max_sections == 50
+
+
+def test_config_site_search_overrides_apply(tmp_path, minimal_project_root):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+        extra="""
+        [site.search]
+        enabled = false
+        max_section_chars = 400
+        max_sections = 12
+        """,
+    )
+
+    config = load_config(config_path)
+
+    assert config.site.search.enabled is False
+    assert config.site.search.max_section_chars == 400
+    assert config.site.search.max_sections == 12
+
+
+def test_config_site_search_rejects_non_positive_max_sections(
+    tmp_path, minimal_project_root
+):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+        extra="""
+        [site.search]
+        max_sections = 0
+        """,
+    )
+
+    with pytest.raises(ConfigError, match="site.search.max_sections"):
+        load_config(config_path)
+
+
+def test_config_site_search_rejects_non_integer_value(tmp_path, minimal_project_root):
+    config_path = write_config(
+        tmp_path,
+        projects=[
+            {
+                "name": "booktx",
+                "docs_root": str(minimal_project_root / "docs"),
+                "release_tag": "v0.4.0",
+            }
+        ],
+        extra="""
+        [site.search]
+        max_section_chars = "not-a-number"
+        """,
+    )
+
+    with pytest.raises(ConfigError, match="max_section_chars"):
+        load_config(config_path)

@@ -5,6 +5,8 @@ from pathlib import Path
 from sphinxpress.jekyll_writer import (
     parse_nav_yaml,
     site_api_css,
+    site_search_css,
+    tool_search_js,
     write_jekyll_page,
     write_tool_nav,
     write_tools_index,
@@ -125,6 +127,7 @@ def test_jekyll_writer_writes_page_with_front_matter(tmp_path):
     assert 'docs_variant: "release"' in content
     assert "{% raw %}" in content
     assert "{% endraw %}" in content
+    assert "search_enabled: true" in content
 
 
 def test_jekyll_writer_writes_nav_yaml(tmp_path):
@@ -217,6 +220,67 @@ def test_site_api_css_is_scoped():
     assert "overflow-wrap: anywhere" in css
     assert "prefers-color-scheme: dark" in css
     assert "@media print" in css
+
+
+def test_site_search_css_is_scoped():
+    css = site_search_css()
+
+    assert ".tool-search" in css
+    assert ".tool-search-results" in css
+    assert "prefers-color-scheme: dark" in css
+    assert "@media print" in css
+
+
+def test_tool_search_js_is_present():
+    js = tool_search_js()
+
+    assert "tool-search" in js
+    assert "fetch(" in js
+    assert "DOMContentLoaded" in js
+
+
+def test_jekyll_writer_emits_search_form_when_enabled(tmp_path):
+    output = write_jekyll_page(
+        site=_site(tmp_path),
+        relative_path=Path("tools/booktx/index.md"),
+        title="booktx",
+        permalink="/tools/booktx/",
+        nav_tool="booktx",
+        body_html="<p>Hello</p>",
+        docs_project="booktx",
+        docs_variant="release",
+        docs_ref="v0.4.0",
+        docs_commit="1234567",
+        search_enabled=True,
+    )
+
+    content = output.read_text(encoding="utf-8")
+    assert "search_enabled: true" in content
+    assert '<style data-sphinxpress-style="search">' in content
+    assert '<script data-sphinxpress-script="search"' in content
+    assert "{% endraw %}" in content
+
+
+def test_jekyll_writer_omits_search_assets_when_disabled(tmp_path):
+    output = write_jekyll_page(
+        site=_site(tmp_path),
+        relative_path=Path("tools/booktx/index.md"),
+        title="booktx",
+        permalink="/tools/booktx/",
+        nav_tool="booktx",
+        body_html="<p>Hello</p>",
+        docs_project="booktx",
+        docs_variant="release",
+        docs_ref="v0.4.0",
+        docs_commit="1234567",
+        search_enabled=False,
+    )
+
+    content = output.read_text(encoding="utf-8")
+    assert "search_enabled: false" in content
+    assert '<form class="tool-search"' not in content
+    assert 'data-sphinxpress-style="search"' not in content
+    assert 'data-sphinxpress-script="search"' not in content
 
 
 def test_jekyll_writer_preserves_liquid_examples_and_neutralizes_endraw(tmp_path):
