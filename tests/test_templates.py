@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import sphinxpress
@@ -110,10 +111,14 @@ def test_tool_doc_layout_renders_version_switcher():
     assert "v.current" in text
     assert "{% raw %}" not in text
     assert "{% endraw %}" not in text
-    open_tags = text.count("{% if")
-    end_tags = text.count("{% endif")
-    for_tags = text.count("{% for")
-    endfor_tags = text.count("{% endfor")
+    # Prettier wraps the frontmatter at 80 chars and can split Liquid tags
+    # across lines (e.g. `{%` on one line and `endif %}` on the next). Count
+    # tags with a regex that tolerates whitespace between `{%` and the tag
+    # name so wrapped tags are still matched.
+    open_tags = len(re.findall(r"\{%\s*if\b", text))
+    end_tags = len(re.findall(r"\{%\s*endif\b", text))
+    for_tags = len(re.findall(r"\{%\s*for\b", text))
+    endfor_tags = len(re.findall(r"\{%\s*endfor\b", text))
     details_open = text.count("<details")
     details_close = text.count("</details>")
     assert open_tags == end_tags
