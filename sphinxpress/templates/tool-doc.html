@@ -1,67 +1,78 @@
 ---
 layout: default
 ---
-{% assign nav = site.data.tool_nav[page.nav_tool] %}
-{% assign tool_prefix = page.nav_tool | append: ' ' %}
-{% if nav.versions and nav.versions.size > 0 %}
-  {% assign has_versions = true %}
-{% else %}
-  {% assign has_versions = false %}
-{% endif %}
-{% if has_versions %}
-  {% assign current_version_label = nil %}
-  {% for v in nav.versions %}
-    {% if v.current %}
-      {% assign current_version_label = v.label %}
-    {% endif %}
-  {% endfor %}
-{% endif %}
+
+{% assign nav = site.data.tool_nav[page.nav_tool] %} {% assign tool_prefix =
+page.nav_tool | append: ' ' %} {% if nav.versions and nav.versions.size > 0 %}
+{% assign has_versions = true %} {% else %} {% assign has_versions = false %} {%
+endif %} {% if has_versions %} {% assign current_version_label = nil %} {% for v
+in nav.versions %} {% if v.current %} {% assign current_version_label = v.label
+%} {% endif %} {% endfor %} {% endif %}
 <div class="tool-layout">
-  <aside class="tool-nav" aria-label="{{ page.nav_tool }} documentation navigation">
+  <aside
+    class="tool-nav"
+    aria-label="{{ page.nav_tool }} documentation navigation"
+  >
     {% if nav and nav.entries %}
     <nav class="tool-nav-menu">
-      <a class="tool-nav-title" href="{{ '/tools/' | append: page.nav_tool | append: '/' | relative_url }}">{{ page.nav_tool }}</a>
+      <a
+        class="tool-nav-title"
+        href="{{ '/tools/' | append: page.nav_tool | append: '/' | relative_url }}"
+        >{{ page.nav_tool }}</a
+      >
       {% if has_versions %}
-      <details class="tool-nav-versions" aria-label="{{ page.nav_tool }} version switcher">
-        <summary>Version: <span class="tool-nav-version-current" aria-current="true">{{ current_version_label }}</span></summary>
+      <details
+        class="tool-nav-versions"
+        aria-label="{{ page.nav_tool }} version switcher"
+      >
+        <summary>
+          Version:
+          <span class="tool-nav-version-current" aria-current="true"
+            >{{ current_version_label }}</span
+          >
+        </summary>
         <ul>
-          {% for v in nav.versions %}
-            {% if v.current %}
-              <li><span class="tool-nav-version-current" aria-current="true">{{ v.label }}</span></li>
-            {% else %}
-              <li><a href="{{ v.url | relative_url }}">{{ v.label }}</a></li>
-            {% endif %}
-          {% endfor %}
+          {% for v in nav.versions %} {% if v.current %}
+          <li>
+            <span class="tool-nav-version-current" aria-current="true"
+              >{{ v.label }}</span
+            >
+          </li>
+          {% else %}
+          <li><a href="{{ v.url | relative_url }}">{{ v.label }}</a></li>
+          {% endif %} {% endfor %}
         </ul>
       </details>
-      {% endif %}
-      {% if nav.repo_url %}
-      <a class="tool-nav-repo" href="{{ nav.repo_url }}" rel="external noopener">View on GitHub</a>
-      {% endif %}
-      {% if nav.release_tag and nav.release_url %}
-      <a class="tool-nav-release" href="{{ nav.release_url }}" rel="external noopener">Latest release: {{ nav.release_tag }}</a>
+      {% endif %} {% if nav.repo_url %}
+      <a class="tool-nav-repo" href="{{ nav.repo_url }}" rel="external noopener"
+        >View on GitHub</a
+      >
+      {% endif %} {% if nav.release_tag and nav.release_url %}
+      <a
+        class="tool-nav-release"
+        href="{{ nav.release_url }}"
+        rel="external noopener"
+        >Latest release: {{ nav.release_tag }}</a
+      >
       {% endif %}
       <ul>
-        {% for entry in nav.entries %}
-        {% assign label = entry.title %}
-        {% if entry.nav_title %}
-          {% assign label = entry.nav_title %}
-        {% elsif entry.label %}
-          {% assign label = entry.label %}
-        {% elsif entry.slug == 'index' %}
-          {% assign label = 'Overview' %}
-        {% else %}
-          {% assign label = entry.title | remove_first: tool_prefix %}
-        {% endif %}
+        {% for entry in nav.entries %} {% assign label = entry.title %} {% if
+        entry.nav_title %} {% assign label = entry.nav_title %} {% elsif
+        entry.label %} {% assign label = entry.label %} {% elsif entry.slug ==
+        'index' %} {% assign label = 'Overview' %} {% else %} {% assign label =
+        entry.title | remove_first: tool_prefix %} {% endif %}
         <li>
-          <a href="{{ entry.url | relative_url }}"{% if page.url == entry.url %} class="active" aria-current="page"{% endif %}>{{ label }}</a>
+          {% if page.url == entry.url %}{% assign active_attrs = '
+          class="active" aria-current="page"' %}{% else %}{% assign active_attrs
+          = "" %}{% endif %}
+          <a href="{{ entry.url | relative_url }}{{ active_attrs }}"
+            >{{ label }}</a
+          >
         </li>
         {% endfor %}
       </ul>
     </nav>
     {% endif %}
   </aside>
-  <article class="tool-content">
-    {{ content }}
-  </article>
+  <article class="tool-content">{{ content }}</article>
 </div>

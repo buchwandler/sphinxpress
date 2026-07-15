@@ -30,6 +30,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0001",
+    "internal": false,
+    "kind": "added",
+    "order": 1,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
+    "status": "accepted",
+    "summary": "Added optional site versioning with named docs variants per project, configurable via [site.versioning] with working_tree, release, and git_ref sources"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0002",
     "internal": true,
     "kind": "internal",
@@ -58,6 +72,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0002",
+    "internal": false,
+    "kind": "added",
+    "order": 2,
+    "record_revision": 2,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
+    "status": "accepted",
+    "summary": "Added per-variant Jekyll page front matter and per-variant nav data files with variant label, ref, commit, source URL, and a version-switcher list"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0003",
     "internal": false,
     "kind": "added",
@@ -68,6 +96,20 @@
     "source_refs": ["git:91e3f92b1a0ae5fe9603cbfb4dc47ad254cef3f7"],
     "status": "accepted",
     "summary": "Added EPUB book metadata fields version, copyright, and suppress_warnings to aggregate conf.py"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0003",
+    "internal": false,
+    "kind": "added",
+    "order": 3,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
+    "status": "accepted",
+    "summary": "Added --variant and --variants filters to build-site and [book].docs_variant to select a single configured variant for combined EPUB and PDF output"
   },
   {
     "audience": null,
@@ -86,6 +128,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0004",
+    "internal": false,
+    "kind": "added",
+    "order": 4,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
+    "status": "accepted",
+    "summary": "Added Jekyll Liquid protection (protect_liquid, on by default) that wraps generated Sphinx HTML in a balanced raw block and neutralizes literal {% endraw %} examples"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0005",
     "internal": false,
     "kind": "changed",
@@ -96,6 +152,20 @@
     "source_refs": ["git:accf2ba59a4da9b83b09ea25533f719f68f92b05"],
     "status": "accepted",
     "summary": "Changed managed build environment to resolve project editable installs to exact name==version pins"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0005",
+    "internal": false,
+    "kind": "changed",
+    "order": 5,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
+    "status": "accepted",
+    "summary": "Changed build-site to resolve every configured variant by default and remove stale outputs via a generated-output manifest"
   },
   {
     "audience": null,
@@ -114,6 +184,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0006",
+    "internal": false,
+    "kind": "changed",
+    "order": 6,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
+    "status": "accepted",
+    "summary": "Changed managed build environment scope to always be shared"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0007",
     "internal": false,
     "kind": "fixed",
@@ -124,6 +208,20 @@
     "source_refs": ["git:444187805736515ff12146fafe5d19f39779da40"],
     "status": "accepted",
     "summary": "Fixed Windows test failures caused by backslash path separators in generated config and assertions"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0007",
+    "internal": false,
+    "kind": "fixed",
+    "order": 7,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:3d9ff4a54a2187adaf12c4ad857a571f9909f23b"],
+    "status": "accepted",
+    "summary": "Fixed git worktree add failures that occurred when a previous .sphinxpress directory was removed externally, leaving prunable worktree registrations behind"
   },
   {
     "audience": null,
@@ -142,6 +240,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0008",
+    "internal": false,
+    "kind": "docs",
+    "order": 8,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:bc7239618f415fe81962e069a7f1fe964f26f0c4"],
+    "status": "accepted",
+    "summary": "Added PyPI version, supported Python versions, and monthly downloads badges to README"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0009",
     "internal": true,
     "kind": "internal",
@@ -155,5 +267,33 @@
     ],
     "status": "accepted",
     "summary": "Improved pre-commit formatting and ledger index consistency"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0009",
+    "internal": true,
+    "kind": "internal",
+    "order": 9,
+    "record_revision": 2,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:8bb81bcfc6364ddd4c318750e648d3021fb63127"],
+    "status": "accepted",
+    "summary": "Reformatted v0.1.2 release ledger files via pre-commit"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0010",
+    "internal": false,
+    "kind": "added",
+    "order": 10,
+    "record_revision": 1,
+    "release_version": "v0.1.3",
+    "scopes": [],
+    "source_refs": ["git:462aa3b097a4533408decb81b02f4d028963694e"],
+    "status": "accepted",
+    "summary": "Added packaged sphinxpress/templates/tool-doc.html Jekyll layout for generated tool pages, including a nav.versions-based version switcher with repo and latest-release links"
   }
 ]

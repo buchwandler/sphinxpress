@@ -1,0 +1,196 @@
+schema_version: 1
+object_type: commit_audit_sheet
+versioning:
+  schema_version: 1
+  revision: 3
+release_version: v0.1.3
+git_base_ref: v0.1.2
+git_base_sha: 621ca40e7e724c20ea8c17cc22f933a73842e614
+git_head_ref: HEAD
+git_head_sha: 462aa3b097a4533408decb81b02f4d028963694e
+git_range: 621ca40e7e724c20ea8c17cc22f933a73842e614..462aa3b097a4533408decb81b02f4d028963694e
+commit_count: 5
+rows:
+  - sha: 8bb81bcfc6364ddd4c318750e648d3021fb63127
+    source_ref: git:8bb81bcfc6364ddd4c318750e648d3021fb63127
+    short_sha: 8bb81bc
+    changed_paths:
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0001.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0002.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0003.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0004.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0005.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0006.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0007.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0008.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0009.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/release.md
+    stats:
+      files_changed: 0
+      insertions: 49
+      deletions: 42
+    inspected: true
+    inspected_paths:
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0001.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0002.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0003.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0004.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0005.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0006.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0007.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0008.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/entries/entry-0009.md
+      - .releaseledger/ledgers/main/releases/v0.1.2/release.md
+    observed_behavior:
+      Reformatting-only edits across v0.1.2 release ledger files (whitespace
+      and quote style). No behavior change.
+    public_impact: internal
+    decision: internal
+    evidence_subject: "chore: pre-commit"
+  - sha: bc7239618f415fe81962e069a7f1fe964f26f0c4
+    source_ref: git:bc7239618f415fe81962e069a7f1fe964f26f0c4
+    short_sha: bc72396
+    changed_paths:
+      - README.md
+    stats:
+      files_changed: 0
+      insertions: 4
+      deletions: 0
+    inspected: true
+    inspected_paths:
+      - README.md
+    observed_behavior:
+      README now shows three PyPI badges (version, Python versions,
+      monthly downloads) at the top of the file. No code or config change.
+    public_impact: docs
+    decision: accepted
+    evidence_subject: "doc: add badge"
+  - sha: 7b8c7a4973b66867ead2f5dce706a55fa619b4a0
+    source_ref: git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0
+    short_sha: 7b8c7a4
+    changed_paths:
+      - .taskledger.toml
+      - README.md
+      - docs/commands.md
+      - docs/configuration.md
+      - docs/jekyll-integration.md
+      - docs/managed-environments.md
+      - docs/outputs.md
+      - docs/release-metadata.md
+      - sphinxpress/book_builder.py
+      - sphinxpress/cli.py
+      - sphinxpress/command_log.py
+      - sphinxpress/config.py
+      - sphinxpress/jekyll_writer.py
+      - sphinxpress/models.py
+      - sphinxpress/paths.py
+      - sphinxpress/release.py
+      - sphinxpress/site_builder.py
+      - sphinxpress/source_manager.py
+      - sphinxpress/sphinx_runner.py
+      - sphinxpress/templates/jekyll_page.md.j2
+      - sphinxpress/validate.py
+      - tests/test_book_builder.py
+      - tests/test_cli.py
+      - tests/test_config.py
+      - tests/test_jekyll_writer.py
+      - tests/test_paths.py
+      - tests/test_release.py
+      - tests/test_site_builder.py
+      - tests/test_source_manager.py
+      - tests/test_sphinx_runner.py
+      - tests/test_templates.py
+      - tests/test_validate.py
+    stats:
+      files_changed: 0
+      insertions: 2948
+      deletions: 327
+    inspected: true
+    inspected_paths:
+      - sphinxpress/site_builder.py
+      - sphinxpress/source_manager.py
+      - sphinxpress/jekyll_writer.py
+      - sphinxpress/config.py
+      - sphinxpress/models.py
+      - sphinxpress/cli.py
+      - sphinxpress/release.py
+      - sphinxpress/paths.py
+      - sphinxpress/book_builder.py
+      - sphinxpress/command_log.py
+      - sphinxpress/validate.py
+      - sphinxpress/sphinx_runner.py
+      - sphinxpress/templates/jekyll_page.md.j2
+      - docs/commands.md
+      - docs/configuration.md
+      - docs/jekyll-integration.md
+    observed_behavior:
+      Introduces optional [site.versioning] with named variants (working_tree,
+      release, git_ref). build-site resolves every configured variant per project by
+      default, with --variant/--variants filters. Per-target page front matter and per-variant
+      nav YAML files are written; nav payloads gain variant, ref, commit, source_url,
+      and a version-switcher list. Liquid protection wraps generated HTML in a balanced
+      raw block and neutralizes literal endraw examples. [book].docs_variant picks a
+      single variant for combined EPUB/PDF. build-site now writes a generated-output
+      manifest and removes stale files for variants no longer selected. Managed build
+      env scope is hard-pinned to shared.
+    public_impact: public
+    decision: accepted
+    evidence_subject: "feat: allow docs variant (e.g. release and git main version)"
+  - sha: 3d9ff4a54a2187adaf12c4ad857a571f9909f23b
+    source_ref: git:3d9ff4a54a2187adaf12c4ad857a571f9909f23b
+    short_sha: 3d9ff4a
+    changed_paths:
+      - .taskledger.toml
+      - sphinxpress/source_manager.py
+      - tests/test_source_manager.py
+    stats:
+      files_changed: 0
+      insertions: 78
+      deletions: 2
+    inspected: true
+    inspected_paths:
+      - sphinxpress/source_manager.py
+      - tests/test_source_manager.py
+    observed_behavior:
+      source_manager now runs git worktree prune for any project whose
+      variants include a non-working_tree source, so an external rm -rf of the .sphinxpress
+      sources tree no longer leaves stale (detached HEAD) prunable worktree registrations
+      that would block the next build.
+    public_impact: public
+    decision: accepted
+    evidence_subject: "feat: clean worktree on build and fix project variants"
+  - sha: 462aa3b097a4533408decb81b02f4d028963694e
+    source_ref: git:462aa3b097a4533408decb81b02f4d028963694e
+    short_sha: 462aa3b
+    changed_paths:
+      - .taskledger.toml
+      - docs/jekyll-integration.md
+      - sphinxpress/source_manager.py
+      - sphinxpress/templates/tool-doc.html
+      - tests/test_source_manager.py
+      - tests/test_templates.py
+    stats:
+      files_changed: 0
+      insertions: 155
+      deletions: 9
+    inspected: true
+    inspected_paths:
+      - sphinxpress/templates/tool-doc.html
+      - docs/jekyll-integration.md
+      - tests/test_templates.py
+    observed_behavior:
+      "Adds a packaged Jekyll layout at sphinxpress/templates/tool-doc.html
+      for generated tool pages. The layout reads site.data.tool_nav[page.nav_tool] and
+      renders the tool title, a <details> version switcher from nav.versions (the entry
+      with current: true shown as plain text inside the summary, others as links), the
+      repo link from nav.repo_url, the latest-release link from nav.release_tag/nav.release_url,
+      and the entries <ul> from nav.entries with the existing label cleanup and active/aria-current
+      rule. The version switcher <details> block is omitted entirely when nav.versions
+      is missing or empty, keeping the layout usable for working-tree-only sites. docs/jekyll-integration.md
+      is updated to document the new layout, its required front matter, and rendering
+      behavior. tests/test_templates.py gains two new tests that assert the layout is
+      packaged and that its template content is structurally valid (matched if/for/details
+      tags, no raw/endraw blocks)."
+    public_impact: public
+    decision: accepted
+    evidence_subject: "feat: per tool rendering for different variants added"

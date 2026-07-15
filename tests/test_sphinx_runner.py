@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -122,6 +123,8 @@ def test_run_sphinx_passes_target_environment(
     monkeypatch.setattr(
         "sphinxpress.sphinx_runner.run_logged_command", fake_run_logged_command
     )
+    python_paths = [Path("/workspace/booktx"), Path("/workspace/booktx/src")]
+    expected_pythonpath = os.pathsep.join(str(path) for path in python_paths)
 
     run_sphinx(
         builder="json",
@@ -130,7 +133,7 @@ def test_run_sphinx_passes_target_environment(
         out_dir=tmp_path / "out",
         doctree_dir=tmp_path / "doctrees",
         fail_on_warning=True,
-        python_paths=[Path("/workspace/booktx"), Path("/workspace/booktx/src")],
+        python_paths=python_paths,
         environment={
             "SPHINXPRESS_DOCS_PROJECT": "booktx",
             "SPHINXPRESS_DOCS_VARIANT": "main",
@@ -144,13 +147,15 @@ def test_run_sphinx_passes_target_environment(
     assert env["SPHINXPRESS_DOCS_VARIANT"] == "main"
     assert env["SPHINXPRESS_DOCS_REF"] == "main"
     assert env["SPHINXPRESS_DOCS_COMMIT"] == "abc1234"
-    assert env["PYTHONPATH"].startswith("/workspace/booktx:/workspace/booktx/src")
+    assert env["PYTHONPATH"].startswith(expected_pythonpath)
 
 
 def test_run_sphinx_logs_safe_environment_entries(tmp_path, minimal_project_root):
     out_dir = tmp_path / "out"
     doctree_dir = tmp_path / "doctrees"
     log_dir = tmp_path / "logs"
+    python_paths = [Path("/workspace/booktx"), Path("/workspace/booktx/src")]
+    expected_pythonpath = os.pathsep.join(str(path) for path in python_paths)
 
     run_sphinx(
         builder="json",
@@ -161,7 +166,7 @@ def test_run_sphinx_logs_safe_environment_entries(tmp_path, minimal_project_root
         fail_on_warning=True,
         log_dir=log_dir,
         log_stem="site-booktx-main-json",
-        python_paths=[Path("/workspace/booktx"), Path("/workspace/booktx/src")],
+        python_paths=python_paths,
         environment={
             "SPHINXPRESS_DOCS_PROJECT": "booktx",
             "SPHINXPRESS_DOCS_VARIANT": "main",
@@ -176,4 +181,4 @@ def test_run_sphinx_logs_safe_environment_entries(tmp_path, minimal_project_root
     assert "SPHINXPRESS_DOCS_VARIANT=main" in content
     assert "SPHINXPRESS_DOCS_REF=main" in content
     assert "SPHINXPRESS_DOCS_COMMIT=abc1234" in content
-    assert "PYTHONPATH=/workspace/booktx:/workspace/booktx/src" in content
+    assert f"PYTHONPATH={expected_pythonpath}" in content
