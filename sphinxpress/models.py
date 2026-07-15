@@ -56,6 +56,7 @@ class SiteConfig:
     title: str
     protect_liquid: bool
     versioning: SiteVersioningConfig
+    overview_layout: str = "default"
 
 
 @dataclass(frozen=True)
@@ -113,6 +114,7 @@ class ProjectConfig:
     root_doc: str
     repo_url: str
     release_strategy: ReleaseStrategy
+    description: str = ""
     release_tag: str | None = None
     site_variants: list[str] | None = None
     version_refs: dict[str, str] = field(default_factory=dict)
@@ -219,6 +221,17 @@ class NavEntry:
     slug: str
     title: str
     url: str
+
+
+@dataclass(frozen=True)
+class ToolSummary:
+    name: str
+    title: str
+    description: str = ""
+    docs_url: str = ""
+    repo_url: str = ""
+    release_tag: str | None = None
+    release_url: str | None = None
 
 
 @dataclass(frozen=True)

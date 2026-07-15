@@ -61,6 +61,7 @@ def load_config(config_path: Path | str = Path("sphinxpress.toml")) -> AppConfig
         title=_string(site_data, "title"),
         protect_liquid=_bool(site_data, "protect_liquid", default=True),
         versioning=versioning,
+        overview_layout=_string(site_data, "overview_layout", default="default"),
     )
     env_data = build_data.get("env", {})
     if not isinstance(env_data, dict):
@@ -280,6 +281,7 @@ def _project_from_raw(
         root_doc=_string(raw, "root_doc", default="index"),
         repo_url=_string(raw, "repo_url"),
         release_strategy=_release_strategy(raw, "release_strategy", default="manual"),
+        description=_optional_string(raw, "description", default=""),
         release_tag=raw.get("release_tag"),
         site_variants=(
             None
@@ -354,6 +356,15 @@ def _bool(raw: dict[str, Any], key: str, default: bool) -> bool:
     value = raw.get(key, default)
     if not isinstance(value, bool):
         raise ConfigError(f"Configuration field '{key}' must be a boolean.")
+    return value
+
+
+def _optional_string(raw: dict[str, Any], key: str, default: str = "") -> str:
+    value = raw.get(key, default)
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        raise ConfigError(f"Configuration field '{key}' must be a string when set.")
     return value
 
 

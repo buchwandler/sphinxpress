@@ -18,6 +18,7 @@ from .models import (
     ProjectConfig,
     ReleaseMetadata,
     ResolvedSiteTarget,
+    ToolSummary,
 )
 from .paths import (
     ensure_within_root,
@@ -110,7 +111,11 @@ def build_site(
         site=config.site,
         relative_path=config.site.tools_dir / "index.md",
         title=config.site.title,
-        tools=_tool_links(config, targets_by_project),
+        tools=_tool_links(
+            config,
+            targets_by_project,
+            release_by_project=release_by_project,
+        ),
     )
     outputs.append(tools_index)
     _cleanup_stale_outputs(
@@ -187,8 +192,10 @@ def _version_catalog(
 def _tool_links(
     config: AppConfig,
     targets_by_project: dict[str, list[ResolvedSiteTarget]],
-) -> list[tuple[str, str]]:
-    links: list[tuple[str, str]] = []
+    *,
+    release_by_project: dict[str, ReleaseMetadata],
+) -> list[ToolSummary]:
+    summaries: list[ToolSummary] = []
     for project in config.ordered_projects():
         project_targets = targets_by_project.get(project.name, [])
         default_target = next(
@@ -201,18 +208,25 @@ def _tool_links(
             variant_segment = config.site.versioning.require_variant(
                 config.site.versioning.default
             ).url_segment
-        links.append(
-            (
-                project.title,
-                permalink_for(
-                    config.site.tools_dir,
-                    project.name,
-                    project.root_doc,
-                    variant_segment=variant_segment,
-                ),
+        docs_url = permalink_for(
+            config.site.tools_dir,
+            project.name,
+            project.root_doc,
+            variant_segment=variant_segment,
+        )
+        release = release_by_project.get(project.name)
+        summaries.append(
+            ToolSummary(
+                name=project.name,
+                title=project.title,
+                description=project.description,
+                docs_url=docs_url,
+                repo_url=project.repo_url,
+                release_tag=release.tag if release else None,
+                release_url=release.url if release else None,
             )
         )
-    return links
+    return summaries
 
 
 def _render_target_json(

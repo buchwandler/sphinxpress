@@ -32,6 +32,9 @@ def write_config(
         docs_root_val = project["docs_root"].replace(chr(92), "/")
         conf_dir_val = project.get("conf_dir", docs_root_val).replace(chr(92), "/")
         repo_url_default = "https://example.com/" + project["name"]
+        description_line = ""
+        if project.get("description"):
+            description_line = f'description = "{project["description"]}"\n'
         project_blocks.append(
             textwrap.dedent(
                 f"""
@@ -43,7 +46,7 @@ def write_config(
                 root_doc = "{project.get("root_doc", "index")}"
                 repo_url = "{project.get("repo_url", repo_url_default)}"
                 release_strategy = "{project.get("release_strategy", "manual")}"
-                {release_tag_line}
+                {description_line}{release_tag_line}
                 """
             ).strip()
         )

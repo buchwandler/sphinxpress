@@ -10,7 +10,13 @@ from pathlib import Path
 import yaml
 from jinja2 import Environment, FileSystemLoader
 
-from .models import NavEntry, ReleaseMetadata, ResolvedSiteTarget, SiteConfig
+from .models import (
+    NavEntry,
+    ReleaseMetadata,
+    ResolvedSiteTarget,
+    SiteConfig,
+    ToolSummary,
+)
 from .paths import ensure_within_root, generated_notice, write_text_if_changed
 
 _HEADERLINK_RE = re.compile(
@@ -130,26 +136,98 @@ def write_tools_index(
     site: SiteConfig,
     relative_path: Path,
     title: str,
-    tools: list[tuple[str, str]],
+    tools: list[ToolSummary],
 ) -> Path:
     destination = ensure_within_root(site.root, site.root / relative_path)
-    lines = [
-        "---",
-        f"layout: {site.layout}",
-        f'title: "{title}"',
-        f"permalink: /{'/'.join(site.tools_dir.parts)}/",
-        "---",
-        "",
-        generated_notice(),
-        "",
-        f"# {title}",
-        "",
-    ]
-    for tool_name, url in tools:
-        lines.append(f"- [{tool_name}]({url})")
-    lines.append("")
-    write_text_if_changed(destination, "\n".join(lines))
+    body = _render_tools_index_body(title=title, tools=tools)
+    content = (
+        "\n".join(
+            [
+                "---",
+                f"layout: {site.overview_layout}",
+                f'title: "{title}"',
+                f"permalink: /{'/'.join(site.tools_dir.parts)}/",
+                "---",
+                "",
+                generated_notice(),
+                "",
+                body,
+                "",
+            ]
+        )
+        + "\n"
+    )
+    write_text_if_changed(destination, content)
     return destination
+
+
+def _render_tools_index_body(*, title: str, tools: list[ToolSummary]) -> str:
+    count = len(tools)
+    lede = (
+        "Each tool handles one step in the pipeline: extracting text, "
+        "building output, splitting passages, and publishing documentation."
+    )
+    hero = (
+        '<section class="hero">\n'
+        '  <div class="hero-copy">\n'
+        '    <p class="eyebrow">Documentation</p>\n'
+        f"    <h1>{title}</h1>\n"
+        f'    <p class="hero-lede">{lede}</p>\n'
+        "  </div>\n"
+        '  <div class="hero-panel" aria-label="Toolkit summary">\n'
+        '    <div class="hero-panel-label">The toolkit</div>\n'
+        f'    <div class="hero-stat">{count}<span>focused tools</span></div>\n'
+        "    <p>File-based, reviewable state for each step of the pipeline.</p>\n"
+        "  </div>\n"
+        "</section>"
+    )
+    cards = [_render_tool_card(tool) for tool in tools]
+    section = (
+        '<section class="tool-section" aria-labelledby="tools-index-title">\n'
+        '  <div class="section-heading">\n'
+        "    <div>\n"
+        '      <p class="eyebrow">The toolkit</p>\n'
+        '      <h2 id="tools-index-title">All tools</h2>\n'
+        "    </div>\n"
+        "  </div>\n"
+        '  <div class="cards tool-cards">\n' + "\n".join(cards) + "\n  </div>\n"
+        "</section>"
+    )
+    return "\n\n".join([hero, section])
+
+
+def _render_tool_card(tool: ToolSummary) -> str:
+    lines = [
+        '    <article class="card tool-card">',
+        '      <p class="card-label">Tool</p>',
+        f"      <h3>{tool.title}</h3>",
+    ]
+    if tool.description:
+        lines.append(f"      <p>{tool.description}</p>")
+    lines.append('      <div class="card-links">')
+    if tool.docs_url:
+        lines.append(
+            f'        <a href="{tool.docs_url}">Read docs '
+            '<span aria-hidden="true">↗</span></a>'
+        )
+    if tool.release_url:
+        release_label = (
+            f"Latest release: {tool.release_tag}"
+            if tool.release_tag
+            else "Latest release"
+        )
+        lines.append(
+            f'        <a href="{tool.release_url}" rel="external noopener">'
+            f'{release_label} <span aria-hidden="true">↗</span></a>'
+        )
+    if tool.repo_url:
+        lines.append(
+            f'        <a href="{tool.repo_url}" rel="external noopener">'
+            'GitHub <span aria-hidden="true">↗</span></a>'
+        )
+    lines.append("      </div>")
+    lines.append("    </article>")
+    return "\n".join(lines)
 
 
 def parse_nav_yaml(path: Path) -> dict:
