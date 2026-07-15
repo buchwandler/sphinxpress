@@ -21,6 +21,11 @@ def test_template_files_are_packaged():
     assert expected <= {path.name for path in root.glob("*.j2")}
 
 
+def test_tool_doc_layout_is_packaged():
+    root = Path("sphinxpress/templates")
+    assert (root / "tool-doc.html").is_file()
+
+
 def test_site_api_css_is_packaged():
     root = Path("sphinxpress/templates")
     assert (root / "site_api.css").is_file()
@@ -92,3 +97,25 @@ def test_aggregate_index_template_indents_toctree_entries():
 def test_site_api_css_is_installed_in_package():
     template_dir = Path(sphinxpress.__file__).with_name("templates")
     assert (template_dir / "site_api.css").is_file()
+
+
+def test_tool_doc_layout_renders_version_switcher():
+    template_dir = Path("sphinxpress/templates")
+    text = (template_dir / "tool-doc.html").read_text(encoding="utf-8")
+    assert text.startswith("---\n")
+    second_line = text.splitlines()[1]
+    assert second_line.strip() == "layout: default"
+    assert "nav.versions" in text
+    assert 'class="tool-nav-versions"' in text
+    assert "v.current" in text
+    assert "{% raw %}" not in text
+    assert "{% endraw %}" not in text
+    open_tags = text.count("{% if")
+    end_tags = text.count("{% endif")
+    for_tags = text.count("{% for")
+    endfor_tags = text.count("{% endfor")
+    details_open = text.count("<details")
+    details_close = text.count("</details>")
+    assert open_tags == end_tags
+    assert for_tags == endfor_tags
+    assert details_open == details_close

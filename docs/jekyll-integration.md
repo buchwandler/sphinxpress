@@ -70,9 +70,60 @@ This keeps Jekyll 3 from interpreting literal Liquid examples inside Sphinx
 HTML. Literal `{% endraw %}` examples are neutralized before rendering so they
 cannot terminate the outer raw block.
 
-## Layout follow-up for versioned docs
+## Version switcher layout
 
-A consumer layout should use `page.nav_tool` to load the correct nav payload and
-render the version switcher from `nav.versions`. Release variants can continue
-to show `release_tag` / `release_url`; non-release variants should link to
-`source_url`.
+`sphinxpress/templates/tool-doc.html` is the canonical consumer layout for the
+generated tool pages. It is shipped with the package (it is installed into
+`sphinxpress/templates/` alongside the other templates) and can be used in two
+ways:
+
+- Copy the file into the consuming site's `_layouts/tool-doc.html` and let
+  sphinxpress keep generating pages that reference `layout: tool-doc`.
+- Or render the file directly from the package if the consuming site is willing
+  to point its `layout:` value at a vendored copy of the file.
+
+### Minimal front matter
+
+A generated tool page needs at least the following front matter to use the
+layout (sphinxpress already writes this for every page, so consumer sites do
+not have to add it manually):
+
+```yaml
+---
+layout: tool-doc
+title: "sphinxpress"
+permalink: /tools/sphinxpress/
+nav_tool: sphinpress
+---
+```
+
+`nav_tool` is the only field the layout strictly requires. It selects the
+matching entry from `site.data.tool_nav`. The other fields (`title`,
+`permalink`, `docs_project`, `docs_variant`, `docs_ref`, `docs_commit`) are
+already documented above and can be passed through unchanged.
+
+### What the layout renders
+
+The layout reads `nav = site.data.tool_nav[page.nav_tool]` and renders:
+
+- the tool title as a link to the tool's release-variant index page,
+- a `<details class="tool-nav-versions">` block sourced from `nav.versions`
+  (the entry with `current: true` is shown as plain text inside the
+  `<summary>`, every other entry is rendered as a link to its own `url`),
+- the existing "View on GitHub" link from `nav.repo_url` (when present),
+- the existing "Latest release" link from `nav.release_tag` / `nav.release_url`
+  (when present),
+- the entries `<ul>` from `nav.entries`, with the existing label cleanup
+  (`entry.nav_title`, `entry.label`, `entry.slug == 'index' -> 'Overview'`,
+  `entry.title | remove_first: tool_prefix` fallback) and the existing
+  `active` / `aria-current="page"` rule keyed on `page.url == entry.url`.
+
+If `nav.versions` is missing or empty, the version switcher `<details>` block
+is omitted entirely; the rest of the layout still renders normally. This keeps
+the layout working for working-tree-only sites (the
+`example_site` fixture falls back cleanly) and for any future variant source
+that does not yet populate `versions`.
+
+The layout does not pull a "Latest release" hint or a "Source" link into the
+switcher itself; release variants still show `release_tag` next to the title,
+and the per-page front matter already carries the source ref and commit.

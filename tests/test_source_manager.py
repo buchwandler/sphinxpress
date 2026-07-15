@@ -324,9 +324,9 @@ def test_resolve_targets_with_prunable_worktree(tmp_path):
     assert "Release docs" in (
         second_by_name["release"].docs_root / "index.rst"
     ).read_text(encoding="utf-8")
-    assert "Main docs" in (
-        second_by_name["main"].docs_root / "index.rst"
-    ).read_text(encoding="utf-8")
+    assert "Main docs" in (second_by_name["main"].docs_root / "index.rst").read_text(
+        encoding="utf-8"
+    )
 
     final_listing = _git(repo, "worktree", "list", "--porcelain")
     assert "prunable" not in final_listing

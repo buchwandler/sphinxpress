@@ -301,6 +301,7 @@ def _prune_stale_worktrees(
         ],
     )
 
+
 def _is_registered_worktree(project_root: Path, target_dir: Path) -> bool:
     return target_dir.resolve() in _registered_worktrees(project_root)
 
