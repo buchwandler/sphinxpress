@@ -50,8 +50,19 @@ def site_api_css() -> str:
 @lru_cache(maxsize=1)
 def site_search_css() -> str:
     """Return the packaged sphinxpress search stylesheet for generated pages."""
+
     template_dir = Path(__file__).with_name("templates")
+
     return (template_dir / "site_search.css").read_text(encoding="utf-8").strip()
+
+
+@lru_cache(maxsize=1)
+def site_highlight_css() -> str:
+    """Return the packaged sphinxpress Pygments/Rouge highlight stylesheet."""
+
+    template_dir = Path(__file__).with_name("templates")
+
+    return (template_dir / "site_highlight.css").read_text(encoding="utf-8").strip()
 
 
 @lru_cache(maxsize=1)
@@ -97,6 +108,7 @@ def write_jekyll_page(
             site_css=site_api_css(),
             site_search_css=site_search_css() if search_enabled else "",
             site_search_js=tool_search_js() if search_enabled else "",
+            site_highlight_css=site_highlight_css(),
             search_enabled=bool(search_enabled),
             body_html=sanitized_body,
         )

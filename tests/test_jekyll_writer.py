@@ -5,12 +5,14 @@ from pathlib import Path
 from sphinxpress.jekyll_writer import (
     parse_nav_yaml,
     site_api_css,
+    site_highlight_css,
     site_search_css,
     tool_search_js,
     write_jekyll_page,
     write_tool_nav,
     write_tools_index,
 )
+
 from sphinxpress.models import (
     NavEntry,
     ProjectConfig,
@@ -229,6 +231,63 @@ def test_site_search_css_is_scoped():
     assert ".tool-search-results" in css
     assert "prefers-color-scheme: dark" in css
     assert "@media print" in css
+
+
+def test_site_highlight_css_is_scoped():
+    css = site_highlight_css()
+
+    assert ".sphinxpress-doc" in css
+    for token in (".c", ".c1", ".k", ".kc", ".s", ".s2", ".m", ".o", ".nf", ".nb"):
+        assert token in css, f"missing token class {token}"
+    assert 'html[data-theme="dark"]' in css
+    assert "prefers-color-scheme: dark" in css
+    assert "@media print" in css
+    assert "{% endraw %}" not in css
+    assert "div[class^=\"highlight-\"]" in css
+    assert "div[class*=\" highlight-\"]" in css
+
+
+def test_jekyll_writer_embeds_scoped_highlight_styles(tmp_path):
+    output = write_jekyll_page(
+        site=_site(tmp_path),
+        relative_path=Path("tools/booktx/index.md"),
+        title="booktx",
+        permalink="/tools/booktx/",
+        nav_tool="booktx",
+        body_html="<p>Hello</p>",
+        docs_project="booktx",
+        docs_variant="release",
+        docs_ref="v0.4.0",
+        docs_commit="1234567",
+        search_enabled=True,
+    )
+
+    content = output.read_text(encoding="utf-8")
+    assert '<style data-sphinxpress-style="highlight">' in content
+    assert "{% endraw %}" in content
+    assert content.count("{% raw %}") == 1
+    assert content.count("{% endraw %}") == 1
+    raw_block = content[
+        content.index("{% raw %}") : content.index("{% endraw %}") + len("{% endraw %}")
+    ]
+    assert 'data-sphinxpress-style="highlight"' in raw_block
+
+    output_disabled = write_jekyll_page(
+        site=_site(tmp_path),
+        relative_path=Path("tools/booktx/index.md"),
+        title="booktx",
+        permalink="/tools/booktx/",
+        nav_tool="booktx",
+        body_html="<p>Hello</p>",
+        docs_project="booktx",
+        docs_variant="release",
+        docs_ref="v0.4.0",
+        docs_commit="1234567",
+        search_enabled=False,
+    )
+
+    disabled_content = output_disabled.read_text(encoding="utf-8")
+    assert '<style data-sphinxpress-style="highlight">' in disabled_content
 
 
 def test_tool_search_js_is_present():
