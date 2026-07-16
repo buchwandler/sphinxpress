@@ -1,0 +1,10 @@
+[ledger]
+code = "pl"
+name = "planledger"
+
+[project]
+name = "sphinxpress"
+uuid = "00937ed8-d095-4f89-b05f-39631c080a17"
+
+[storage]
+planledger_dir = "../ledger/plan/sphinxpress"

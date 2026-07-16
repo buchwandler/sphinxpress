@@ -1,0 +1,124 @@
+schema_version: 1
+object_type: commit_audit_sheet
+versioning:
+  schema_version: 1
+  revision: 2
+release_version: v0.1.4
+git_base_ref: v0.1.3
+git_base_sha: 0e72ae1e7e970aad69e73ab3dd655615a3764149
+git_head_ref: HEAD
+git_head_sha: 60a05a83d01313932765a3e9573b96d74008ed58
+git_range: 0e72ae1e7e970aad69e73ab3dd655615a3764149..60a05a83d01313932765a3e9573b96d74008ed58
+commit_count: 5
+rows:
+  - sha: 8f804fca10a206a21772c408c1f0286a841018b8
+    source_ref: git:8f804fca10a206a21772c408c1f0286a841018b8
+    short_sha: 8f804fc
+    changed_paths: []
+    stats:
+      files_changed: 0
+      insertions: 0
+      deletions: 0
+    inspected: true
+    inspected_paths:
+      - sphinxpress/jekyll_writer.py
+      - sphinxpress/models.py
+      - sphinxpress/config.py
+      - sphinxpress/site_builder.py
+      - tests/test_jekyll_writer.py
+    observed_behavior:
+      Replaced the plain Markdown tools index with a hero section plus
+      a per-tool card grid. Each card renders a label, title, optional description,
+      and links to docs, latest release (with tag), and GitHub. Added the ToolSummary
+      model, a new [site].overview_layout config key, and a per-project description
+      field used to populate cards.
+    public_impact: public
+    decision: accepted
+  - sha: 09a59f01d37f01d85cf3192286583685dc1d52e3
+    source_ref: git:09a59f01d37f01d85cf3192286583685dc1d52e3
+    short_sha: 09a59f0
+    changed_paths: []
+    stats:
+      files_changed: 0
+      insertions: 0
+      deletions: 0
+    inspected: true
+    inspected_paths:
+      - sphinxpress/search_index.py
+      - sphinxpress/site_builder.py
+      - sphinxpress/config.py
+      - sphinxpress/models.py
+      - sphinxpress/jekyll_writer.py
+      - sphinxpress/templates/jekyll_page.md.j2
+      - sphinxpress/templates/site_search.css
+      - sphinxpress/templates/tool_search.js
+      - sphinxpress/templates/tool-doc.html
+    observed_behavior:
+      "Added a per-tool in-page search: a static JSON index built from
+      rendered Sphinx HTML is written to search/<nav_key>.json, and a packaged search
+      stylesheet plus a self-contained search script are embedded in each generated
+      tool page. New [site].search config with enabled, max_section_chars, and max_sections
+      controls the index size."
+    public_impact: public
+    decision: accepted
+  - sha: 5c6d018740942b5be5df8809ac067348f8a857eb
+    source_ref: git:5c6d018740942b5be5df8809ac067348f8a857eb
+    short_sha: 5c6d018
+    changed_paths: []
+    stats:
+      files_changed: 0
+      insertions: 0
+      deletions: 0
+    inspected: true
+    inspected_paths:
+      - sphinxpress/jekyll_writer.py
+      - sphinxpress/templates/jekyll_page.md.j2
+      - sphinxpress/templates/site_highlight.css
+      - tests/test_jekyll_writer.py
+    observed_behavior:
+      "Added a packaged Pygments/Rouge highlight stylesheet embedded
+      in every generated tool page. Theme tokens use CSS custom properties so light
+      and prefers-color-scheme: dark are configured from one block, and selectors are
+      scoped to .sphinxpress-doc."
+    public_impact: public
+    decision: accepted
+  - sha: c094ce82c540b52352f88d86d4c70c39a4c341af
+    source_ref: git:c094ce82c540b52352f88d86d4c70c39a4c341af
+    short_sha: c094ce8
+    changed_paths: []
+    stats:
+      files_changed: 0
+      insertions: 0
+      deletions: 0
+    inspected: true
+    inspected_paths:
+      - sphinxpress/cli.py
+      - sphinxpress/layout_sync.py
+      - docs/jekyll-integration.md
+      - tests/test_layout_sync.py
+    observed_behavior:
+      New `sphinxpress sync-layout` command copies the package's tool-doc.html
+      into <site.root>/_layouts/<site.layout>.html. Default policy skips identical files
+      and refuses (exit 1) when the consumer's copy has drifted, printing a unified
+      diff. --force overwrites and --dry-run prints the diff without writing.
+    public_impact: public
+    decision: accepted
+  - sha: 60a05a83d01313932765a3e9573b96d74008ed58
+    source_ref: git:60a05a83d01313932765a3e9573b96d74008ed58
+    short_sha: 60a05a8
+    changed_paths: []
+    stats:
+      files_changed: 0
+      insertions: 0
+      deletions: 0
+    inspected: true
+    inspected_paths:
+      - sphinxpress/templates/site_highlight.css
+      - tests/test_jekyll_writer.py
+      - tests/test_layout_sync.py
+    observed_behavior:
+      "Pre-commit reformat only: normalises whitespace and quote style
+      in the new site_highlight.css and the test files. No user-visible behavior change;
+      covered together with the highlight CSS feature."
+    public_impact: none
+    decision: grouped

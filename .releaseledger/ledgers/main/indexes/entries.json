@@ -44,6 +44,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0001",
+    "internal": false,
+    "kind": "changed",
+    "order": 1,
+    "record_revision": 2,
+    "release_version": "v0.1.4",
+    "scopes": [],
+    "source_refs": ["git:8f804fca10a206a21772c408c1f0286a841018b8"],
+    "status": "accepted",
+    "summary": "Changed the tools index into a hero section and a per-tool card grid showing description, docs, release, and GitHub links"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0002",
     "internal": true,
     "kind": "internal",
@@ -86,6 +100,20 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0002",
+    "internal": false,
+    "kind": "added",
+    "order": 2,
+    "record_revision": 2,
+    "release_version": "v0.1.4",
+    "scopes": [],
+    "source_refs": ["git:09a59f01d37f01d85cf3192286583685dc1d52e3"],
+    "status": "accepted",
+    "summary": "Added a per-tool in-page search bar with a static JSON index at search/<nav_key>.json and a packaged search stylesheet and script"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0003",
     "internal": false,
     "kind": "added",
@@ -114,6 +142,23 @@
   {
     "audience": null,
     "breaking": false,
+    "entry_id": "entry-0003",
+    "internal": false,
+    "kind": "added",
+    "order": 3,
+    "record_revision": 2,
+    "release_version": "v0.1.4",
+    "scopes": [],
+    "source_refs": [
+      "git:5c6d018740942b5be5df8809ac067348f8a857eb",
+      "git:60a05a83d01313932765a3e9573b96d74008ed58"
+    ],
+    "status": "accepted",
+    "summary": "Added a packaged Pygments/Rouge highlight stylesheet embedded in every tool page, scoped to .sphinxpress-doc with light and dark themes"
+  },
+  {
+    "audience": null,
+    "breaking": false,
     "entry_id": "entry-0004",
     "internal": false,
     "kind": "added",
@@ -138,6 +183,20 @@
     "source_refs": ["git:7b8c7a4973b66867ead2f5dce706a55fa619b4a0"],
     "status": "accepted",
     "summary": "Added Jekyll Liquid protection (protect_liquid, on by default) that wraps generated Sphinx HTML in a balanced raw block and neutralizes literal {% endraw %} examples"
+  },
+  {
+    "audience": null,
+    "breaking": false,
+    "entry_id": "entry-0004",
+    "internal": false,
+    "kind": "added",
+    "order": 4,
+    "record_revision": 2,
+    "release_version": "v0.1.4",
+    "scopes": [],
+    "source_refs": ["git:c094ce82c540b52352f88d86d4c70c39a4c341af"],
+    "status": "accepted",
+    "summary": "Added `sphinxpress sync-layout` to copy tool-doc.html into the consumer's _layouts/, skipping identical files and refusing drift"
   },
   {
     "audience": null,
