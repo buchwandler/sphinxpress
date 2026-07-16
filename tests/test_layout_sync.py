@@ -56,7 +56,9 @@ def test_sync_consumer_layout_writes_when_target_missing(tmp_path):
     assert result.status == "wrote"
     target = tmp_path / "_layouts" / "tool-doc.html"
     assert target.exists()
-    assert target.read_text(encoding="utf-8").strip() == layout_sync.read_package_layout()
+    assert (
+        target.read_text(encoding="utf-8").strip() == layout_sync.read_package_layout()
+    )
 
 
 def test_sync_consumer_layout_skips_when_identical(tmp_path):
@@ -67,7 +69,9 @@ def test_sync_consumer_layout_skips_when_identical(tmp_path):
     result = sync_consumer_layout(site)
 
     assert result.status == "skipped_identical"
-    assert (tmp_path / "_layouts" / "tool-doc.html").read_text(encoding="utf-8") == before
+    assert (tmp_path / "_layouts" / "tool-doc.html").read_text(
+        encoding="utf-8"
+    ) == before
 
 
 def test_sync_consumer_layout_refuses_when_different(tmp_path):
@@ -93,7 +97,9 @@ def test_sync_consumer_layout_force_overwrites(tmp_path):
     result = sync_consumer_layout(site, force=True)
 
     assert result.status == "wrote"
-    assert target.read_text(encoding="utf-8").strip() == layout_sync.read_package_layout()
+    assert (
+        target.read_text(encoding="utf-8").strip() == layout_sync.read_package_layout()
+    )
 
 
 def test_sync_consumer_layout_dry_run_does_not_write(tmp_path):
@@ -134,13 +140,13 @@ def _write_config(tmp_path: Path) -> Path:
         'nav_data_dir = "_data/tool_nav"\n'
         'layout = "tool-doc"\n'
         'title = "T"\n'
-        'protect_liquid = true\n\n'
+        "protect_liquid = true\n\n"
         "[build]\n"
         'work_dir = ".sphinxpress"\n'
         'log_dir = ".sphinxpress/logs"\n'
         'sphinx_build = "sphinx-build"\n'
-        'fail_on_warning = false\n'
-        'keep_build_dir = false\n'
+        "fail_on_warning = false\n"
+        "keep_build_dir = false\n"
         'parallel = "auto"\n\n'
         "[build.env]\n"
         "enabled = false\n"
@@ -157,9 +163,9 @@ def _write_config(tmp_path: Path) -> Path:
         'copyright = "2026, A"\n'
         "suppress_warnings = []\n"
         'project_order = ["t"]\n\n'
-        "[pdf]\nbuilder = \"weasyprint\"\noutput = \"dist/t.pdf\"\n\n"
-        "[epub]\nbuilder = \"epub\"\noutput = \"dist/t.epub\"\n\n"
-        "[release]\ntag_prefix = \"v\"\n"
+        '[pdf]\nbuilder = "weasyprint"\noutput = "dist/t.pdf"\n\n'
+        '[epub]\nbuilder = "epub"\noutput = "dist/t.epub"\n\n'
+        '[release]\ntag_prefix = "v"\n'
         'release_url_template = "{repo_url}/releases/tag/{tag}"\n'
         'branch_url_template = "{repo_url}/tree/{ref}"\n\n'
         "[[projects]]\n"

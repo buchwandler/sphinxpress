@@ -12,7 +12,6 @@ from sphinxpress.jekyll_writer import (
     write_tool_nav,
     write_tools_index,
 )
-
 from sphinxpress.models import (
     NavEntry,
     ProjectConfig,
@@ -243,8 +242,8 @@ def test_site_highlight_css_is_scoped():
     assert "prefers-color-scheme: dark" in css
     assert "@media print" in css
     assert "{% endraw %}" not in css
-    assert "div[class^=\"highlight-\"]" in css
-    assert "div[class*=\" highlight-\"]" in css
+    assert 'div[class^="highlight-"]' in css
+    assert 'div[class*=" highlight-"]' in css
 
 
 def test_jekyll_writer_embeds_scoped_highlight_styles(tmp_path):
