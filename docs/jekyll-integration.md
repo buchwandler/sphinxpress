@@ -82,6 +82,15 @@ ways:
 - Or render the file directly from the package if the consuming site is willing
   to point its `layout:` value at a vendored copy of the file.
 
+The `sphinxpress sync-layout` command keeps the consumer's copy in step with the
+package. It writes the package file to `<site.root>/_layouts/<site.layout>.html`
+(path derived from the existing `[site].root` and `[site].layout` keys). The
+default policy is safe: identical files are skipped silently, and a file that
+has drifted from the package is refused (exit 1) with a unified diff printed for
+inspection. Re-run with `--force` to overwrite, or `--dry-run` to print the
+diff without writing. CI scripts that want a hard gate on drift can run
+`sphinxpress sync-layout` directly and treat exit 1 as a failure.
+
 ### Minimal front matter
 
 A generated tool page needs at least the following front matter to use the

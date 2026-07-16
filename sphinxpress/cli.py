@@ -17,6 +17,7 @@ from .config import (
     update_project_release_tag,
 )
 from .errors import SphinxpressError
+from .layout_sync import sync_consumer_layout
 from .release import resolve_release_metadata, resolve_release_tag
 from .site_builder import build_site
 from .source_manager import resolve_site_targets
@@ -290,6 +291,54 @@ def validate_command(
     config = _load_from_context(ctx)
     run_validation(config, config.ordered_projects(), include_linkcheck=linkcheck)
     typer.echo("Validation passed.")
+
+
+@app.command("sync-layout")
+@_command
+def sync_layout_command(
+    ctx: typer.Context,
+    force: bool = typer.Option(
+        False,
+        "--force",
+        help="Overwrite the consumer layout file even when it has been modified.",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Print the unified diff without writing. Exits 0.",
+    ),
+) -> None:
+    """Copy the canonical sphinxpress tool layout into the consumer's _layouts/.
+
+    The target path is derived from [site].root and [site].layout. The default
+    policy is to skip identical files and refuse (exit 1) when the consumer's
+    file has drifted from the package. Use --force to overwrite, or --dry-run
+    to inspect the diff before deciding.
+    """
+    config = _load_from_context(ctx)
+    result = sync_consumer_layout(config.site, force=force, dry_run=dry_run)
+    if result.status == "wrote":
+        typer.echo(f"Wrote {result.target_path}.")
+    elif result.status == "skipped_identical":
+        typer.echo(
+            f"No changes: {result.target_path} is identical to the package layout."
+        )
+    elif result.status == "would_write":
+        typer.echo(
+            f"Would update {result.target_path} (--dry-run; no changes written)."
+        )
+        if result.diff_text:
+            typer.echo(result.diff_text, nl=False)
+    elif result.status == "refused":
+        typer.echo(
+            f"Refusing to overwrite {result.target_path}: it differs from the"
+            " package layout. Inspect the diff below and re-run with --force"
+            " to overwrite.",
+            err=True,
+        )
+        if result.diff_text:
+            typer.echo(result.diff_text, nl=False)
+        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":
